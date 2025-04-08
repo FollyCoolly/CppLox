@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "memory.h"
+#include "value.h"
 
 enum class OpCode : uint8_t {
   Return = 0,
@@ -15,6 +16,7 @@ constexpr OpCode from_uint8(uint8_t value) {
 
 struct Chunk {
   uint8_t *code;
+  ValueArray constants;
   int count;
   int capacity;
 
@@ -23,4 +25,6 @@ struct Chunk {
 
   void Write(uint8_t byte);
   void Write(OpCode op);
+
+  int AddConstant(Value value);
 };

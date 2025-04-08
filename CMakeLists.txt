@@ -9,6 +9,7 @@ add_executable(cpplox
     chunk.cpp
     memory.cpp
     debug.cpp
+    value.cpp
 )
 
 target_include_directories(cpplox PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}) 

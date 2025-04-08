@@ -12,3 +12,8 @@ void Chunk::Write(uint8_t byte) {
   code[count] = byte;
   count++;
 }
+
+int Chunk::AddConstant(Value value) {
+  constants.Write(value);
+  return constants.count - 1;
+}
