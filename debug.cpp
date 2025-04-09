@@ -8,6 +8,13 @@ int simpleInstruction(std::string_view name, int offset) {
   std::cout << name << "\n";
   return offset + 1;
 }
+
+int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
+  uint8_t constant = chunk.code[offset + 1];
+  std::cout << std::setw(16) << std::setfill(' ') << name << " " << constant
+            << "\n";
+  return offset + 2;
+}
 } // namespace
 
 void disassembleChunk(const Chunk &chunk, std::string_view name) {
@@ -24,6 +31,8 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
 
   uint8_t instruction = chunk.code[offset];
   switch (from_uint8(instruction)) {
+  case OpCode::Constant:
+    return constantInstruction("OP_CONSTANT", chunk, offset);
   case OpCode::Return:
     return simpleInstruction("OP_RETURN", offset);
   default:
