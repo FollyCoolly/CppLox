@@ -17,12 +17,16 @@ struct Chunk {
   ValueArray constants;
   int count;
   int capacity;
+  int *lines;
 
-  Chunk() : code(nullptr), count(0), capacity(0) {}
-  ~Chunk() { FREE_ARRAY(uint8_t, code, capacity); }
+  Chunk() : code(nullptr), count(0), capacity(0), lines(nullptr) {}
+  ~Chunk() {
+    FREE_ARRAY(uint8_t, code, capacity);
+    FREE_ARRAY(int, lines, capacity);
+  }
 
-  void Write(uint8_t byte);
-  void Write(OpCode op);
+  void Write(uint8_t byte, int line);
+  void Write(OpCode op, int line);
 
   int AddConstant(Value value);
 };

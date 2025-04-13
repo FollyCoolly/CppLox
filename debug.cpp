@@ -11,7 +11,7 @@ int simpleInstruction(std::string_view name, int offset) {
 
 int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
   uint8_t constantIdx = chunk.code[offset + 1];
-  std::cout << std::format("{:<16} {:>4} {:g} \n", name, constantIdx,
+  std::cout << std::format("{:<16} {:>4} '{:g}' \n", name, constantIdx,
                            chunk.constants.values[constantIdx]);
   return offset + 2;
 }
@@ -27,6 +27,11 @@ void disassembleChunk(const Chunk &chunk, std::string_view name) {
 
 int disassembleInstruction(const Chunk &chunk, int offset) {
   std::cout << std::format("{:04} ", offset);
+  if (offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1]) {
+    std::cout << "   | ";
+  } else {
+    std::cout << std::format("{:4} ", chunk.lines[offset]);
+  }
 
   uint8_t instruction = chunk.code[offset];
   switch (from_uint8(instruction)) {
