@@ -10,8 +10,9 @@ int simpleInstruction(std::string_view name, int offset) {
 }
 
 int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
-  uint8_t constant = chunk.code[offset + 1];
-  std::cout << std::format("{:16} {}\n", name, constant);
+  uint8_t constantIdx = chunk.code[offset + 1];
+  std::cout << std::format("{:<16} {:>4} {:g} \n", name, constantIdx,
+                           chunk.constants.values[constantIdx]);
   return offset + 2;
 }
 } // namespace
