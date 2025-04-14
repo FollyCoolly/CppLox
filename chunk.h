@@ -1,8 +1,9 @@
 #pragma once
 
 #include "common.h"
-#include "memory.h"
-#include "value.h"
+#include <vector>
+
+using Value = double;
 
 enum class OpCode : uint8_t { Constant, Return };
 
@@ -13,17 +14,12 @@ constexpr OpCode from_uint8(uint8_t value) {
 }
 
 struct Chunk {
-  uint8_t *code;
-  ValueArray constants;
-  int count;
-  int capacity;
-  int *lines;
+  std::vector<uint8_t> code;
+  std::vector<Value> constants;
+  std::vector<int> lines;
 
-  Chunk() : code(nullptr), count(0), capacity(0), lines(nullptr) {}
-  ~Chunk() {
-    FREE_ARRAY(uint8_t, code, capacity);
-    FREE_ARRAY(int, lines, capacity);
-  }
+  Chunk() = default;
+  ~Chunk() = default;
 
   void Write(uint8_t byte, int line);
   void Write(OpCode op, int line);

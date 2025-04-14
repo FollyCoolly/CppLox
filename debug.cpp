@@ -12,7 +12,7 @@ int simpleInstruction(std::string_view name, int offset) {
 int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
   uint8_t constantIdx = chunk.code[offset + 1];
   std::cout << std::format("{:<16} {:>4} '{:g}' \n", name, constantIdx,
-                           chunk.constants.values[constantIdx]);
+                           chunk.constants[constantIdx]);
   return offset + 2;
 }
 } // namespace
@@ -20,7 +20,7 @@ int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
 void disassembleChunk(const Chunk &chunk, std::string_view name) {
   std::cout << std::format("== {} ==\n", name);
 
-  for (int offset = 0; offset < chunk.count;) {
+  for (int offset = 0; offset < chunk.code.size();) {
     offset = disassembleInstruction(chunk, offset);
   }
 }
