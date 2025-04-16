@@ -12,6 +12,7 @@ add_executable(cpplox
     main.cpp
     chunk.cpp
     debug.cpp
+    vm.cpp
 )
 
 target_include_directories(cpplox PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

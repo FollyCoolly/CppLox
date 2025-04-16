@@ -1,4 +1,5 @@
 #include "vm.h"
+#include "debug.h"
 #include <iostream>
 
 VM &VM::getInstance() {
@@ -19,6 +20,9 @@ InterpretResult VM::run() {
   };
 
   while (true) {
+#ifdef DEBUG_TRACE_EXECUTION
+    disassembleInstruction(*chunk_, codeIdx_);
+#endif
     uint8_t instruction = readByte();
     switch (from_uint8(instruction)) {
     case OpCode::Return:
