@@ -2,6 +2,7 @@
 
 #include "chunk.h"
 #include <memory>
+#include <vector>
 
 enum class InterpretResult {
   InterpretOk,
@@ -21,6 +22,11 @@ private:
 
   std::shared_ptr<Chunk> chunk_;
   int codeIdx_;
+  std::vector<Value> stack_;
 
   InterpretResult run();
+
+  Value pop();
+  void push(Value value);
+  void printStack();
 };

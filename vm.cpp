@@ -22,15 +22,32 @@ InterpretResult VM::run() {
   while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
     disassembleInstruction(*chunk_, codeIdx_);
+    printStack();
 #endif
     uint8_t instruction = readByte();
     switch (from_uint8(instruction)) {
     case OpCode::Return:
+      std::cout << pop() << std::endl;
       return InterpretResult::InterpretOk;
     case OpCode::Constant:
       Value constant = readConstant();
-      std::cout << constant << std::endl;
+      push(constant);
       break;
     }
   }
+}
+
+Value VM::pop() {
+  Value value = stack_.back();
+  stack_.pop_back();
+  return value;
+}
+
+void VM::push(Value value) { stack_.push_back(value); }
+
+void VM::printStack() {
+  for (auto &value : stack_) {
+    std::cout << std::format("[ {} ] ", value);
+  }
+  std::cout << std::endl;
 }
