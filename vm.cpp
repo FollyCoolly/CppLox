@@ -29,6 +29,9 @@ InterpretResult VM::run() {
     case OpCode::Return:
       std::cout << pop() << std::endl;
       return InterpretResult::InterpretOk;
+    case OpCode::Negate:
+      push(-pop());
+      break;
     case OpCode::Constant:
       Value constant = readConstant();
       push(constant);

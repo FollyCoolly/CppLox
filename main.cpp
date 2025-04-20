@@ -7,7 +7,8 @@ int main(int argc, char **argv) {
   int constant = chunk->AddConstant(1.2);
   chunk->Write(OpCode::Constant, 123);
   chunk->Write(constant, 123);
-  chunk->Write(OpCode::Return, 124);
+  chunk->Write(OpCode::Negate, 123);
+  chunk->Write(OpCode::Return, 123);
   // disassembleChunk(*chunk, "test chunk");
   VM::getInstance().interpret(chunk);
   return 0;
