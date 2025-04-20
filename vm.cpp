@@ -18,6 +18,12 @@ InterpretResult VM::run() {
   auto readConstant = [this, &readByte]() -> Value {
     return chunk_->constants[readByte()];
   };
+#define BINARY_OP(op)                                                          \
+  do {                                                                         \
+    Value right = pop();                                                       \
+    Value left = pop();                                                        \
+    push(left op right);                                                       \
+  } while (false)
 
   while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
@@ -32,12 +38,25 @@ InterpretResult VM::run() {
     case OpCode::Negate:
       push(-pop());
       break;
+    case OpCode::Add:
+      BINARY_OP(+);
+      break;
+    case OpCode::Subtract:
+      BINARY_OP(-);
+      break;
+    case OpCode::Multiply:
+      BINARY_OP(*);
+      break;
+    case OpCode::Divide:
+      BINARY_OP(/);
+      break;
     case OpCode::Constant:
       Value constant = readConstant();
       push(constant);
       break;
     }
   }
+#undef BINARY_OP
 }
 
 Value VM::pop() {

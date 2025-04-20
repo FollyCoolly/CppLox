@@ -4,10 +4,24 @@
 
 int main(int argc, char **argv) {
   auto chunk = std::make_shared<Chunk>();
+
   int constant = chunk->AddConstant(1.2);
   chunk->Write(OpCode::Constant, 123);
   chunk->Write(constant, 123);
+
+  constant = chunk->AddConstant(4.4);
+  chunk->Write(OpCode::Constant, 123);
+  chunk->Write(constant, 123);
+
+  chunk->Write(OpCode::Add, 123);
+
+  constant = chunk->AddConstant(5.6);
+  chunk->Write(OpCode::Constant, 123);
+  chunk->Write(constant, 123);
+
+  chunk->Write(OpCode::Divide, 123);
   chunk->Write(OpCode::Negate, 123);
+
   chunk->Write(OpCode::Return, 123);
   // disassembleChunk(*chunk, "test chunk");
   VM::getInstance().interpret(chunk);
