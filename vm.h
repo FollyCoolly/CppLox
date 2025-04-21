@@ -13,6 +13,7 @@ enum class InterpretResult {
 class VM {
 public:
   static VM &getInstance();
+  static InterpretResult interpret(const std::string &source);
 
   InterpretResult interpret(std::shared_ptr<Chunk> chunk);
 

@@ -1,10 +1,16 @@
 #include "vm.h"
+#include "compiler.h"
 #include "debug.h"
 #include <iostream>
 
 VM &VM::getInstance() {
   static VM instance;
   return instance;
+}
+
+InterpretResult VM::interpret(const std::string &source) {
+  compile(source);
+  return InterpretResult::InterpretOk;
 }
 
 InterpretResult VM::interpret(std::shared_ptr<Chunk> chunk) {
