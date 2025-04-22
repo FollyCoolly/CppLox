@@ -5,6 +5,8 @@ Scanner::Scanner(const std::string &source)
       end_(source.c_str() + source.size()), line_(1) {}
 
 Token Scanner::scanToken() {
+  skipWhitespace();
+
   start_ = current_;
 
   if (isAtEnd()) {
@@ -86,4 +88,23 @@ bool Scanner::match(char expected) {
   }
   current_++;
   return true;
+}
+
+void Scanner::skipWhitespace() {
+  while (!isAtEnd()) {
+    char c = peek();
+    switch (c) {
+    case ' ':
+    case '\r':
+    case '\t':
+      advance();
+      break;
+    case '\n':
+      line_++;
+      advance();
+      break;
+    default:
+      return;
+    }
+  }
 }

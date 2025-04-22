@@ -74,6 +74,7 @@ private:
   char peek() const;
   char peekNext() const;
   bool match(char expected);
+  void skipWhitespace();
 
   const char *current_;
   const char *start_;
