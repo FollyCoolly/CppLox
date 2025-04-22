@@ -14,6 +14,9 @@ Token Scanner::scanToken() {
   }
 
   char c = advance();
+  if (isdigit(c)) {
+    return number();
+  }
 
   switch (c) {
   case '(':
@@ -47,6 +50,8 @@ Token Scanner::scanToken() {
   case '>':
     return makeToken(match('=') ? TokenType::GREATER_EQUAL
                                 : TokenType::GREATER);
+  case '"':
+    return string();
   }
 
   return errorToken("Unexpected character.");
@@ -117,4 +122,37 @@ void Scanner::skipWhitespace() {
       return;
     }
   }
+}
+
+Token Scanner::string() {
+  while (!isAtEnd() && peek() != '"') {
+    if (peek() == '\n') {
+      line_++;
+    }
+    advance();
+  }
+
+  if (isAtEnd()) {
+    return errorToken("Unterminated string.");
+  }
+
+  // The closing "
+  advance();
+
+  return makeToken(TokenType::STRING);
+}
+
+Token Scanner::number() {
+  while (isdigit(peek())) {
+    advance();
+  }
+
+  if (peek() == '.' && isdigit(peekNext())) {
+    advance(); // consume the '.'
+    while (isdigit(peek())) {
+      advance();
+    }
+  }
+
+  return makeToken(TokenType::NUMBER);
 }
