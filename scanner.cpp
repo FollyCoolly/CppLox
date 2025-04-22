@@ -103,6 +103,16 @@ void Scanner::skipWhitespace() {
       line_++;
       advance();
       break;
+    case '/':
+      if (peekNext() == '/') {
+        // Skip the rest of the line
+        while (!isAtEnd() && peek() != '\n') {
+          advance();
+        }
+      } else {
+        return;
+      }
+      break;
     default:
       return;
     }
