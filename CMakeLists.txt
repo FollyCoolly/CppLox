@@ -14,6 +14,7 @@ add_executable(cpplox
     debug.cpp
     vm.cpp
     compiler.cpp
+    scanner.cpp
 )
 
 target_include_directories(cpplox PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

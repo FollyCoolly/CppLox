@@ -2,11 +2,81 @@
 
 #include <string>
 
+enum class TokenType {
+  // Single-character tokens
+  LEFT_PAREN,
+  RIGHT_PAREN,
+  LEFT_BRACE,
+  RIGHT_BRACE,
+  COMMA,
+  DOT,
+  MINUS,
+  PLUS,
+  SEMICOLON,
+  SLASH,
+  STAR,
+
+  // One or two character tokens
+  BANG,
+  BANG_EQUAL,
+  EQUAL,
+  EQUAL_EQUAL,
+  GREATER,
+  GREATER_EQUAL,
+  LESS,
+  LESS_EQUAL,
+
+  // Literals
+  IDENTIFIER,
+  STRING,
+  NUMBER,
+
+  // Keywords
+  AND,
+  CLASS,
+  ELSE,
+  FALSE,
+  FUN,
+  FOR,
+  IF,
+  NIL,
+  OR,
+  PRINT,
+  RETURN,
+  SUPER,
+  THIS,
+  TRUE,
+  VAR,
+  WHILE,
+
+  // Other
+  ERROR,
+  END_OF_FILE
+};
+
+struct Token {
+  TokenType type;
+  const char *start;
+  int length;
+  int line;
+};
+
 class Scanner {
 public:
   Scanner(const std::string &source);
+  Token scanToken();
 
 private:
-  const char *current;
-  int line;
+  bool isAtEnd() const;
+  Token makeToken(TokenType type);
+  Token errorToken(const char *message);
+  char advance();
+  char peek() const;
+  char peekNext() const;
+  bool match(char expected);
+
+  const char *current_;
+  const char *start_;
+  const char *end_;
+  int line_;
 };
