@@ -77,6 +77,10 @@ private:
   void skipWhitespace();
   Token string();
   Token number();
+  Token identifier();
+  TokenType identifierType() const;
+  TokenType checkKeyword(int start, int length, const char *rest,
+                         TokenType type) const;
 
   const char *current_;
   const char *start_;
