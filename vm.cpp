@@ -9,8 +9,9 @@ VM &VM::getInstance() {
 }
 
 InterpretResult VM::interpret(const std::string &source) {
-  compile(source);
-  return InterpretResult::InterpretOk;
+  Compiler compiler;
+  auto chunk = compiler.compile(source);
+  return getInstance().interpret(chunk);
 }
 
 InterpretResult VM::interpret(std::shared_ptr<Chunk> chunk) {
