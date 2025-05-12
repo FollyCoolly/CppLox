@@ -15,6 +15,9 @@ public:
 
   bool hadError() const { return hadError_; }
 
+  const Token &previous() const { return previous_; }
+  const Token &current() const { return current_; }
+
 private:
   Scanner scanner_;
   Token current_;
