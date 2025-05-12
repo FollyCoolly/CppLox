@@ -13,9 +13,15 @@ void Compiler::emitByte(OpCode op) {
   compilingChunk_->Write(to_underlying(op), parser_->previous().line);
 }
 
-void Compiler::emitBytes(OpCode op1, OpCode op2) {
-  emitByte(op1);
-  emitByte(op2);
+void Compiler::emitByte(uint8_t byte) {
+  compilingChunk_->Write(byte, parser_->previous().line);
+}
+
+void Compiler::emitBytes(OpCode op, uint8_t byte) {
+  emitByte(op);
+  emitByte(byte);
 }
 
 void Compiler::emitReturn() { emitByte(OpCode::Return); }
+
+void Compiler::endCompiler() { emitReturn(); }

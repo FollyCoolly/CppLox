@@ -9,8 +9,10 @@ class Compiler {
 public:
   std::shared_ptr<Chunk> compile(const std::string &source);
   void emitByte(OpCode op);
-  void emitBytes(OpCode op1, OpCode op2);
+  void emitByte(uint8_t byte);
+  void emitBytes(OpCode op, uint8_t byte);
   void emitReturn();
+  void endCompiler();
 
 private:
   std::shared_ptr<Chunk> compilingChunk_;
