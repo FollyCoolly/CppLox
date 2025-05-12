@@ -9,6 +9,8 @@ std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   return compilingChunk_;
 }
 
+void Compiler::endCompiler() { emitReturn(); }
+
 void Compiler::emitByte(OpCode op) {
   compilingChunk_->Write(to_underlying(op), parser_->previous().line);
 }
@@ -24,4 +26,15 @@ void Compiler::emitBytes(OpCode op, uint8_t byte) {
 
 void Compiler::emitReturn() { emitByte(OpCode::Return); }
 
-void Compiler::endCompiler() { emitReturn(); }
+void Compiler::emitConstant(Value value) {
+  emitBytes(OpCode::Constant, makeConstant(value));
+}
+
+uint8_t Compiler::makeConstant(Value value) {
+  auto constantIndex = compilingChunk_->AddConstant(value);
+  if (constantIndex >= UINT8_MAX) {
+    parser_->error("Too many constants in one chunk.");
+    return 0;
+  }
+  return static_cast<uint8_t>(constantIndex);
+}
