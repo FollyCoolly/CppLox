@@ -35,11 +35,11 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
 
   uint8_t instruction = chunk.code[offset];
   switch (from_uint8(instruction)) {
-  case OpCode::Constant:
+  case OpCode::CONSTANT:
     return constantInstruction("OP_CONSTANT", chunk, offset);
-  case OpCode::Return:
+  case OpCode::RETURN:
     return simpleInstruction("OP_RETURN", offset);
-  case OpCode::Negate:
+  case OpCode::NEGATE:
     return simpleInstruction("OP_NEGATE", offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);

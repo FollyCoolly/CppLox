@@ -39,25 +39,25 @@ InterpretResult VM::run() {
 #endif
     uint8_t instruction = readByte();
     switch (from_uint8(instruction)) {
-    case OpCode::Return:
+    case OpCode::RETURN:
       std::cout << pop() << std::endl;
       return InterpretResult::InterpretOk;
-    case OpCode::Negate:
+    case OpCode::NEGATE:
       push(-pop());
       break;
-    case OpCode::Add:
+    case OpCode::ADD:
       BINARY_OP(+);
       break;
-    case OpCode::Subtract:
+    case OpCode::SUBTRACT:
       BINARY_OP(-);
       break;
-    case OpCode::Multiply:
+    case OpCode::MULTIPLY:
       BINARY_OP(*);
       break;
-    case OpCode::Divide:
+    case OpCode::DIVIDE:
       BINARY_OP(/);
       break;
-    case OpCode::Constant:
+    case OpCode::CONSTANT:
       Value constant = readConstant();
       push(constant);
       break;

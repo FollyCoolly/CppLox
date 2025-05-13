@@ -1,7 +1,8 @@
 #include "compiler.h"
 #include "parser.h"
 #include "scanner.h"
-#include <iostream>
+#include <cstdint>
+#include <unordered_map>
 
 std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
@@ -24,10 +25,10 @@ void Compiler::emitBytes(OpCode op, uint8_t byte) {
   emitByte(byte);
 }
 
-void Compiler::emitReturn() { emitByte(OpCode::Return); }
+void Compiler::emitReturn() { emitByte(OpCode::RETURN); }
 
 void Compiler::emitConstant(Value value) {
-  emitBytes(OpCode::Constant, makeConstant(value));
+  emitBytes(OpCode::CONSTANT, makeConstant(value));
 }
 
 uint8_t Compiler::makeConstant(Value value) {
@@ -37,4 +38,100 @@ uint8_t Compiler::makeConstant(Value value) {
     return 0;
   }
   return static_cast<uint8_t>(constantIndex);
+}
+
+void Compiler::parsePrecedence(std::shared_ptr<Compiler> compiler,
+                               Precedence precedence) {
+  compiler->parser_->advance();
+  ParseRule::ParseFn prefixRule =
+      compiler->getRule(compiler->parser_->previous().type)->prefix;
+  if (!prefixRule) {
+    compiler->parser_->error("Expect expression.");
+    return;
+  }
+
+  prefixRule(compiler);
+
+  while (precedence <=
+         compiler->getRule(compiler->parser_->current().type)->precedence) {
+    compiler->parser_->advance();
+    ParseRule::ParseFn infixRule =
+        compiler->getRule(compiler->parser_->previous().type)->infix;
+    if (!infixRule) {
+      compiler->parser_->error("Expect expression.");
+      return;
+    }
+
+    infixRule(compiler);
+  }
+}
+
+const ParseRule *Compiler::getRule(TokenType type) {
+  static std::unordered_map<TokenType, ParseRule> rules = {
+      {TokenType::LEFT_PAREN, {Compiler::grouping, nullptr, Precedence::NONE}},
+      {TokenType::RIGHT_PAREN, {nullptr, nullptr, Precedence::NONE}},
+      {TokenType::MINUS, {Compiler::unary, Compiler::binary, Precedence::TERM}},
+      {TokenType::PLUS, {nullptr, Compiler::binary, Precedence::TERM}},
+      {TokenType::STAR, {nullptr, Compiler::binary, Precedence::FACTOR}},
+      {TokenType::SLASH, {nullptr, Compiler::binary, Precedence::FACTOR}},
+      {TokenType::NUMBER, {Compiler::number, nullptr, Precedence::NONE}},
+  };
+  if (!rules.contains(type)) {
+    throw std::runtime_error("No rule for token type: " +
+                             std::to_string(static_cast<int>(type)));
+  }
+  return &rules[type];
+}
+
+void Compiler::expression(std::shared_ptr<Compiler> compiler) {
+  compiler->parsePrecedence(compiler, Precedence::ASSIGNMENT);
+}
+
+void Compiler::grouping(std::shared_ptr<Compiler> compiler) {
+  expression(compiler);
+  compiler->parser_->consume(TokenType::RIGHT_PAREN,
+                             "Expect ')' after expression.");
+}
+
+void Compiler::unary(std::shared_ptr<Compiler> compiler) {
+  TokenType operatorType = compiler->parser_->previous().type;
+
+  expression(compiler);
+
+  switch (operatorType) {
+  case TokenType::MINUS:
+    compiler->emitByte(OpCode::NEGATE);
+    break;
+  default:
+    return;
+  }
+}
+
+void Compiler::binary(std::shared_ptr<Compiler> compiler) {
+  TokenType operatorType = compiler->parser_->previous().type;
+  auto rule = getRule(operatorType);
+  parsePrecedence(compiler, static_cast<Precedence>(
+                                static_cast<int>(rule->precedence) + 1));
+
+  switch (operatorType) {
+  case TokenType::PLUS:
+    compiler->emitByte(OpCode::ADD);
+    break;
+  case TokenType::MINUS:
+    compiler->emitByte(OpCode::SUBTRACT);
+    break;
+  case TokenType::STAR:
+    compiler->emitByte(OpCode::MULTIPLY);
+    break;
+  case TokenType::SLASH:
+    compiler->emitByte(OpCode::DIVIDE);
+    break;
+  default:
+    return;
+  }
+}
+
+void Compiler::number(std::shared_ptr<Compiler> compiler) {
+  double value = std::stod(compiler->parser_->previous().start);
+  compiler->emitConstant(value);
 }

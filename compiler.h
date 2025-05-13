@@ -4,6 +4,30 @@
 #include "parser.h"
 #include <memory>
 #include <string>
+#include <sys/types.h>
+
+enum class Precedence : uint8_t {
+  NONE,
+  ASSIGNMENT,
+  OR,
+  AND,
+  EQUALITY,
+  COMPARISON,
+  TERM,
+  FACTOR,
+  UNARY,
+  CALL,
+  PRIMARY
+};
+
+class Compiler;
+
+struct ParseRule {
+  using ParseFn = void (*)(std::shared_ptr<Compiler>);
+  ParseFn prefix;
+  ParseFn infix;
+  Precedence precedence;
+};
 
 class Compiler {
 public:
@@ -16,6 +40,16 @@ public:
   void emitReturn();
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
+
+  static void parsePrecedence(std::shared_ptr<Compiler> compiler,
+                              Precedence precedence);
+  static const ParseRule *getRule(TokenType type);
+
+  static void expression(std::shared_ptr<Compiler> compiler);
+  static void grouping(std::shared_ptr<Compiler> compiler);
+  static void unary(std::shared_ptr<Compiler> compiler);
+  static void binary(std::shared_ptr<Compiler> compiler);
+  static void number(std::shared_ptr<Compiler> compiler);
 
 private:
   std::shared_ptr<Chunk> compilingChunk_;
