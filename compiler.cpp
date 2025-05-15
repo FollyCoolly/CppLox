@@ -3,6 +3,9 @@
 #include "scanner.h"
 #include <cstdint>
 #include <unordered_map>
+#ifdef DEBUG_PRINT_CODE
+#include "debug.h"
+#endif
 
 std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
@@ -13,7 +16,12 @@ std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   return compilingChunk_;
 }
 
-void Compiler::endCompiler() { emitReturn(); }
+void Compiler::endCompiler() {
+  emitReturn();
+#ifdef DEBUG_PRINT_CODE
+  disassembleChunk(*compilingChunk_, "code");
+#endif
+}
 
 void Compiler::emitByte(OpCode op) {
   compilingChunk_->Write(to_underlying(op), parser_->previous().line);
