@@ -7,10 +7,10 @@ void Parser::advance() {
   previous_ = current_;
   while (true) {
     current_ = scanner_.scanToken();
-    if (current_.type == TokenType::ERROR) {
-      hadError_ = true;
+    if (current_.type != TokenType::ERROR) {
+      break;
     }
-    break;
+    errorAtCurrent(current_.start);
   }
 }
 

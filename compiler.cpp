@@ -9,6 +9,7 @@
 
 std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
+  compilingChunk_ = std::make_shared<Chunk>();
   parser_->advance();
   expression(this);
   parser_->consume(TokenType::END_OF_FILE, "Expect end of expression.");
@@ -85,6 +86,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::STAR, {nullptr, Compiler::binary, Precedence::FACTOR}},
       {TokenType::SLASH, {nullptr, Compiler::binary, Precedence::FACTOR}},
       {TokenType::NUMBER, {Compiler::number, nullptr, Precedence::NONE}},
+      {TokenType::END_OF_FILE, {nullptr, nullptr, Precedence::NONE}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -94,7 +96,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
 }
 
 void Compiler::expression(Compiler *compiler) {
-  compiler->parsePrecedence(compiler, Precedence::ASSIGNMENT);
+  parsePrecedence(compiler, Precedence::ASSIGNMENT);
 }
 
 void Compiler::grouping(Compiler *compiler) {
