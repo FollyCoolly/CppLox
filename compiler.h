@@ -23,7 +23,7 @@ enum class Precedence : uint8_t {
 class Compiler;
 
 struct ParseRule {
-  using ParseFn = void (*)(std::shared_ptr<Compiler>);
+  using ParseFn = void (*)(Compiler *);
   ParseFn prefix;
   ParseFn infix;
   Precedence precedence;
@@ -41,15 +41,14 @@ public:
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
 
-  static void parsePrecedence(std::shared_ptr<Compiler> compiler,
-                              Precedence precedence);
+  static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
 
-  static void expression(std::shared_ptr<Compiler> compiler);
-  static void grouping(std::shared_ptr<Compiler> compiler);
-  static void unary(std::shared_ptr<Compiler> compiler);
-  static void binary(std::shared_ptr<Compiler> compiler);
-  static void number(std::shared_ptr<Compiler> compiler);
+  static void expression(Compiler *compiler);
+  static void grouping(Compiler *compiler);
+  static void unary(Compiler *compiler);
+  static void binary(Compiler *compiler);
+  static void number(Compiler *compiler);
 
 private:
   std::shared_ptr<Chunk> compilingChunk_;

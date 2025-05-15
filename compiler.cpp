@@ -7,6 +7,9 @@
 std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
   parser_->advance();
+  expression(this);
+  parser_->consume(TokenType::END_OF_FILE, "Expect end of expression.");
+  endCompiler();
   return compilingChunk_;
 }
 
@@ -40,8 +43,7 @@ uint8_t Compiler::makeConstant(Value value) {
   return static_cast<uint8_t>(constantIndex);
 }
 
-void Compiler::parsePrecedence(std::shared_ptr<Compiler> compiler,
-                               Precedence precedence) {
+void Compiler::parsePrecedence(Compiler *compiler, Precedence precedence) {
   compiler->parser_->advance();
   ParseRule::ParseFn prefixRule =
       compiler->getRule(compiler->parser_->previous().type)->prefix;
@@ -83,17 +85,17 @@ const ParseRule *Compiler::getRule(TokenType type) {
   return &rules[type];
 }
 
-void Compiler::expression(std::shared_ptr<Compiler> compiler) {
+void Compiler::expression(Compiler *compiler) {
   compiler->parsePrecedence(compiler, Precedence::ASSIGNMENT);
 }
 
-void Compiler::grouping(std::shared_ptr<Compiler> compiler) {
+void Compiler::grouping(Compiler *compiler) {
   expression(compiler);
   compiler->parser_->consume(TokenType::RIGHT_PAREN,
                              "Expect ')' after expression.");
 }
 
-void Compiler::unary(std::shared_ptr<Compiler> compiler) {
+void Compiler::unary(Compiler *compiler) {
   TokenType operatorType = compiler->parser_->previous().type;
 
   expression(compiler);
@@ -107,7 +109,7 @@ void Compiler::unary(std::shared_ptr<Compiler> compiler) {
   }
 }
 
-void Compiler::binary(std::shared_ptr<Compiler> compiler) {
+void Compiler::binary(Compiler *compiler) {
   TokenType operatorType = compiler->parser_->previous().type;
   auto rule = getRule(operatorType);
   parsePrecedence(compiler, static_cast<Precedence>(
@@ -131,7 +133,7 @@ void Compiler::binary(std::shared_ptr<Compiler> compiler) {
   }
 }
 
-void Compiler::number(std::shared_ptr<Compiler> compiler) {
+void Compiler::number(Compiler *compiler) {
   double value = std::stod(compiler->parser_->previous().start);
   compiler->emitConstant(value);
 }
