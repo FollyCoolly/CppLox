@@ -29,5 +29,9 @@ private:
 
   Value pop();
   void push(Value value);
+  Value peek(int distance) const;
   void printStack();
+  void resetStack();
+
+  void runtimeError(const std::string &message);
 };

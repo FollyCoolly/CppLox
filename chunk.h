@@ -1,9 +1,8 @@
 #pragma once
 
 #include "common.h"
+#include "value.h"
 #include <vector>
-
-using Value = double;
 
 enum class OpCode : uint8_t {
   CONSTANT,

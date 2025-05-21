@@ -25,11 +25,15 @@ InterpretResult VM::run() {
   auto readConstant = [this, &readByte]() -> Value {
     return chunk_->constants[readByte()];
   };
-#define BINARY_OP(op)                                                          \
+#define BINARY_OP(valueType, op)                                               \
   do {                                                                         \
-    Value right = pop();                                                       \
-    Value left = pop();                                                        \
-    push(left op right);                                                       \
+    if (!Value::IsNumber(peek(0)) || !Value::IsNumber(peek(1))) {              \
+      runtimeError("Operands must be numbers.");                               \
+      return InterpretResult::InterpretRuntimeError;                           \
+    }                                                                          \
+    double b = Value::AsNumber(pop());                                         \
+    double a = Value::AsNumber(pop());                                         \
+    push(valueType(a op b));                                                   \
   } while (false)
 
   while (true) {
@@ -43,19 +47,23 @@ InterpretResult VM::run() {
       std::cout << pop() << std::endl;
       return InterpretResult::InterpretOk;
     case OpCode::NEGATE:
-      push(-pop());
+      if (!Value::IsNumber(peek(0))) {
+        runtimeError("Operand must be a number.");
+        return InterpretResult::InterpretRuntimeError;
+      }
+      push(Value::Number(-Value::AsNumber(pop())));
       break;
     case OpCode::ADD:
-      BINARY_OP(+);
+      BINARY_OP(Value::Number, +);
       break;
     case OpCode::SUBTRACT:
-      BINARY_OP(-);
+      BINARY_OP(Value::Number, -);
       break;
     case OpCode::MULTIPLY:
-      BINARY_OP(*);
+      BINARY_OP(Value::Number, *);
       break;
     case OpCode::DIVIDE:
-      BINARY_OP(/);
+      BINARY_OP(Value::Number, /);
       break;
     case OpCode::CONSTANT:
       Value constant = readConstant();
@@ -74,9 +82,25 @@ Value VM::pop() {
 
 void VM::push(Value value) { stack_.push_back(value); }
 
+Value VM::peek(int distance) const {
+  return stack_[stack_.size() - 1 - distance];
+}
+
 void VM::printStack() {
   for (auto &value : stack_) {
     std::cout << std::format("[ {} ] ", value);
   }
   std::cout << std::endl;
+}
+
+void VM::resetStack() { stack_.clear(); }
+
+void VM::runtimeError(const std::string &message) {
+  std::cerr << message << std::endl;
+
+  size_t instruction = codeIdx_ - 1;
+  int line = chunk_->lines[instruction];
+  std::cerr << "[line " << line << "] in script" << std::endl;
+
+  resetStack();
 }

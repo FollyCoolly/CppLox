@@ -145,5 +145,5 @@ void Compiler::binary(Compiler *compiler) {
 
 void Compiler::number(Compiler *compiler) {
   double value = std::stod(compiler->parser_->previous().start);
-  compiler->emitConstant(value);
+  compiler->emitConstant(Value::Number(value));
 }
