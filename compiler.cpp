@@ -86,6 +86,9 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::STAR, {nullptr, Compiler::binary, Precedence::FACTOR}},
       {TokenType::SLASH, {nullptr, Compiler::binary, Precedence::FACTOR}},
       {TokenType::NUMBER, {Compiler::number, nullptr, Precedence::NONE}},
+      {TokenType::FALSE, {Compiler::literal, nullptr, Precedence::NONE}},
+      {TokenType::TRUE, {Compiler::literal, nullptr, Precedence::NONE}},
+      {TokenType::NIL, {Compiler::literal, nullptr, Precedence::NONE}},
       {TokenType::END_OF_FILE, {nullptr, nullptr, Precedence::NONE}},
   };
   if (!rules.contains(type)) {
@@ -146,4 +149,20 @@ void Compiler::binary(Compiler *compiler) {
 void Compiler::number(Compiler *compiler) {
   double value = std::stod(compiler->parser_->previous().start);
   compiler->emitConstant(Value::Number(value));
+}
+
+void Compiler::literal(Compiler *compiler) {
+  switch (compiler->parser_->previous().type) {
+  case TokenType::FALSE:
+    compiler->emitByte(OpCode::FALSE);
+    break;
+  case TokenType::TRUE:
+    compiler->emitByte(OpCode::TRUE);
+    break;
+  case TokenType::NIL:
+    compiler->emitByte(OpCode::NIL);
+    break;
+  default:
+    return;
+  }
 }

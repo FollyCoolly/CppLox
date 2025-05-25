@@ -11,7 +11,7 @@ int simpleInstruction(std::string_view name, int offset) {
 
 int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
   uint8_t constantIdx = chunk.code[offset + 1];
-  std::cout << std::format("{:<16} {:>4} '{:g}' \n", name, constantIdx,
+  std::cout << std::format("{:<16} {:>4} '{}' \n", name, constantIdx,
                            chunk.constants[constantIdx]);
   return offset + 2;
 }
@@ -41,6 +41,12 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return simpleInstruction("OP_RETURN", offset);
   case OpCode::NEGATE:
     return simpleInstruction("OP_NEGATE", offset);
+  case OpCode::FALSE:
+    return simpleInstruction("OP_FALSE", offset);
+  case OpCode::TRUE:
+    return simpleInstruction("OP_TRUE", offset);
+  case OpCode::NIL:
+    return simpleInstruction("OP_NIL", offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;

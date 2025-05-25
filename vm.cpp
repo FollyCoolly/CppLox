@@ -1,4 +1,5 @@
 #include "vm.h"
+#include "chunk.h"
 #include "compiler.h"
 #include "debug.h"
 #include <iostream>
@@ -64,6 +65,15 @@ InterpretResult VM::run() {
       break;
     case OpCode::DIVIDE:
       BINARY_OP(Value::Number, /);
+      break;
+    case OpCode::FALSE:
+      push(Value::Bool(false));
+      break;
+    case OpCode::TRUE:
+      push(Value::Bool(true));
+      break;
+    case OpCode::NIL:
+      push(Value::Nil());
       break;
     case OpCode::CONSTANT:
       Value constant = readConstant();
