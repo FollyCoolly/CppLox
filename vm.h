@@ -34,4 +34,6 @@ private:
   void resetStack();
 
   void runtimeError(const std::string &message);
+
+  static bool isFalsey(const Value &value);
 };

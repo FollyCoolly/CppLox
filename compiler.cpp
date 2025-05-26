@@ -90,6 +90,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::TRUE, {Compiler::literal, nullptr, Precedence::NONE}},
       {TokenType::NIL, {Compiler::literal, nullptr, Precedence::NONE}},
       {TokenType::END_OF_FILE, {nullptr, nullptr, Precedence::NONE}},
+      {TokenType::BANG, {Compiler::unary, nullptr, Precedence::NONE}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -116,6 +117,9 @@ void Compiler::unary(Compiler *compiler) {
   switch (operatorType) {
   case TokenType::MINUS:
     compiler->emitByte(OpCode::NEGATE);
+    break;
+  case TokenType::BANG:
+    compiler->emitByte(OpCode::NOT);
     break;
   default:
     return;

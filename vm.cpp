@@ -66,6 +66,9 @@ InterpretResult VM::run() {
     case OpCode::DIVIDE:
       BINARY_OP(Value::Number, /);
       break;
+    case OpCode::NOT:
+      push(Value::Bool(!isFalsey(peek(0))));
+      break;
     case OpCode::FALSE:
       push(Value::Bool(false));
       break;
@@ -113,4 +116,8 @@ void VM::runtimeError(const std::string &message) {
   std::cerr << "[line " << line << "] in script" << std::endl;
 
   resetStack();
+}
+
+bool VM::isFalsey(const Value &value) {
+  return Value::IsNil(value) || (Value::IsBool(value) && !Value::AsBool(value));
 }
