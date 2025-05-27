@@ -16,6 +16,9 @@ enum class OpCode : uint8_t {
   TRUE,
   NIL,
   NOT,
+  EQUAL,
+  GREATER,
+  LESS,
 };
 
 constexpr uint8_t to_underlying(OpCode op) { return static_cast<uint8_t>(op); }

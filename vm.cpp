@@ -44,44 +44,69 @@ InterpretResult VM::run() {
 #endif
     uint8_t instruction = readByte();
     switch (from_uint8(instruction)) {
-    case OpCode::RETURN:
+    case OpCode::RETURN: {
       std::cout << pop() << std::endl;
       return InterpretResult::InterpretOk;
-    case OpCode::NEGATE:
+    }
+    case OpCode::NEGATE: {
       if (!Value::IsNumber(peek(0))) {
         runtimeError("Operand must be a number.");
         return InterpretResult::InterpretRuntimeError;
       }
       push(Value::Number(-Value::AsNumber(pop())));
       break;
-    case OpCode::ADD:
+    }
+    case OpCode::ADD: {
       BINARY_OP(Value::Number, +);
       break;
-    case OpCode::SUBTRACT:
+    }
+    case OpCode::SUBTRACT: {
       BINARY_OP(Value::Number, -);
       break;
-    case OpCode::MULTIPLY:
+    }
+    case OpCode::MULTIPLY: {
       BINARY_OP(Value::Number, *);
       break;
-    case OpCode::DIVIDE:
+    }
+    case OpCode::DIVIDE: {
       BINARY_OP(Value::Number, /);
       break;
-    case OpCode::NOT:
+    }
+    case OpCode::NOT: {
       push(Value::Bool(!isFalsey(peek(0))));
       break;
-    case OpCode::FALSE:
+    }
+    case OpCode::FALSE: {
       push(Value::Bool(false));
       break;
-    case OpCode::TRUE:
+    }
+    case OpCode::TRUE: {
       push(Value::Bool(true));
       break;
-    case OpCode::NIL:
+    }
+    case OpCode::NIL: {
       push(Value::Nil());
       break;
-    case OpCode::CONSTANT:
+    }
+    case OpCode::CONSTANT: {
       Value constant = readConstant();
       push(constant);
       break;
+    }
+    case OpCode::EQUAL: {
+      Value b = pop();
+      Value a = pop();
+      push(Value::Bool(a == b));
+      break;
+    }
+    case OpCode::GREATER: {
+      BINARY_OP(Value::Bool, >);
+      break;
+    }
+    case OpCode::LESS: {
+      BINARY_OP(Value::Bool, <);
+      break;
+    }
     }
   }
 #undef BINARY_OP

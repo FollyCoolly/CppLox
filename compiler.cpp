@@ -1,4 +1,5 @@
 #include "compiler.h"
+#include "chunk.h"
 #include "parser.h"
 #include "scanner.h"
 #include <cstdint>
@@ -35,6 +36,11 @@ void Compiler::emitByte(uint8_t byte) {
 void Compiler::emitBytes(OpCode op, uint8_t byte) {
   emitByte(op);
   emitByte(byte);
+}
+
+void Compiler::emitBytes(OpCode op1, OpCode op2) {
+  emitByte(op1);
+  emitByte(op2);
 }
 
 void Compiler::emitReturn() { emitByte(OpCode::RETURN); }
@@ -91,6 +97,16 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::NIL, {Compiler::literal, nullptr, Precedence::NONE}},
       {TokenType::END_OF_FILE, {nullptr, nullptr, Precedence::NONE}},
       {TokenType::BANG, {Compiler::unary, nullptr, Precedence::NONE}},
+      {TokenType::BANG_EQUAL,
+       {nullptr, Compiler::binary, Precedence::EQUALITY}},
+      {TokenType::EQUAL_EQUAL,
+       {nullptr, Compiler::binary, Precedence::EQUALITY}},
+      {TokenType::GREATER, {nullptr, Compiler::binary, Precedence::COMPARISON}},
+      {TokenType::GREATER_EQUAL,
+       {nullptr, Compiler::binary, Precedence::COMPARISON}},
+      {TokenType::LESS, {nullptr, Compiler::binary, Precedence::COMPARISON}},
+      {TokenType::LESS_EQUAL,
+       {nullptr, Compiler::binary, Precedence::COMPARISON}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -145,6 +161,23 @@ void Compiler::binary(Compiler *compiler) {
   case TokenType::SLASH:
     compiler->emitByte(OpCode::DIVIDE);
     break;
+  case TokenType::BANG_EQUAL:
+    compiler->emitBytes(OpCode::EQUAL, OpCode::NOT);
+    break;
+  case TokenType::EQUAL_EQUAL:
+    compiler->emitBytes(OpCode::EQUAL, OpCode::EQUAL);
+    break;
+  case TokenType::GREATER:
+    compiler->emitByte(OpCode::GREATER);
+    break;
+  case TokenType::GREATER_EQUAL:
+    compiler->emitBytes(OpCode::LESS, OpCode::NOT);
+    break;
+  case TokenType::LESS:
+    compiler->emitByte(OpCode::LESS);
+    break;
+  case TokenType::LESS_EQUAL:
+    compiler->emitBytes(OpCode::GREATER, OpCode::NOT);
   default:
     return;
   }

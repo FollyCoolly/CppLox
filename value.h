@@ -15,6 +15,8 @@ struct Value {
     double number;
   } as;
 
+  bool operator==(const Value &other) const;
+
   static Value Bool(bool value) {
     return Value(Type::BOOL, {.boolean = value});
   }

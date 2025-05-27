@@ -37,6 +37,7 @@ public:
   void emitByte(OpCode op);
   void emitByte(uint8_t byte);
   void emitBytes(OpCode op, uint8_t byte);
+  void emitBytes(OpCode op1, OpCode op2);
   void emitReturn();
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
