@@ -222,7 +222,8 @@ TokenType Scanner::identifierType() const {
 
 TokenType Scanner::checkKeyword(int start, int length, const char *rest,
                                 TokenType type) const {
-  if (current_ - start_ == length && memcmp(start_, rest, length) == 0) {
+  if (current_ - start_ == start + length &&
+      memcmp(start_ + start, rest, length) == 0) {
     return type;
   }
   return TokenType::IDENTIFIER;
