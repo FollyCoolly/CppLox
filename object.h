@@ -3,6 +3,7 @@
 #include "common.h"
 #include "value.h"
 #include <string>
+#include <string_view>
 
 struct Obj {
   enum class Type {
@@ -14,6 +15,12 @@ struct Obj {
 
 struct ObjString : Obj {
   std::string str;
+
+  template <typename T>
+  ObjString(T &&str) : Obj{Type::STRING}, str(std::forward<T>(str)) {}
+
+  ObjString(const char *chars, int length)
+      : Obj{Type::STRING}, str(chars, length) {}
 };
 
 namespace obj_helpers {

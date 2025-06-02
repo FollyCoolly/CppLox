@@ -51,6 +51,7 @@ public:
   static void binary(Compiler *compiler);
   static void number(Compiler *compiler);
   static void literal(Compiler *compiler);
+  static void string(Compiler *compiler);
 
 private:
   std::shared_ptr<Chunk> compilingChunk_;

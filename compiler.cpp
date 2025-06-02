@@ -1,9 +1,12 @@
 #include "compiler.h"
-#include "chunk.h"
-#include "parser.h"
-#include "scanner.h"
+
 #include <cstdint>
 #include <unordered_map>
+
+#include "chunk.h"
+#include "object.h"
+#include "parser.h"
+#include "scanner.h"
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
@@ -107,6 +110,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::LESS, {nullptr, Compiler::binary, Precedence::COMPARISON}},
       {TokenType::LESS_EQUAL,
        {nullptr, Compiler::binary, Precedence::COMPARISON}},
+      {TokenType::STRING, {Compiler::string, nullptr, Precedence::NONE}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -186,6 +190,12 @@ void Compiler::binary(Compiler *compiler) {
 void Compiler::number(Compiler *compiler) {
   double value = std::stod(compiler->parser_->previous().start);
   compiler->emitConstant(Value::Number(value));
+}
+
+void Compiler::string(Compiler *compiler) {
+  compiler->emitConstant(
+      Value::Object(new ObjString(compiler->parser_->previous().start + 1,
+                                  compiler->parser_->previous().length - 2)));
 }
 
 void Compiler::literal(Compiler *compiler) {
