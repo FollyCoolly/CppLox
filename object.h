@@ -2,6 +2,8 @@
 
 #include "common.h"
 #include "value.h"
+#include <format>
+#include <iostream>
 #include <string>
 #include <string_view>
 
@@ -36,3 +38,8 @@ inline ObjString *AsString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
+
+// Forward declarations
+template <> struct std::formatter<Obj>;
+std::ostream &operator<<(std::ostream &os, const Obj &obj);
+std::ostream &operator<<(std::ostream &os, const ObjString &obj);

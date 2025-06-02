@@ -49,40 +49,6 @@ struct Value {
   }
 };
 
-template <> struct std::formatter<Value> {
-  constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
-
-  template <typename FormatContext>
-  auto format(const Value &value, FormatContext &ctx) const {
-    switch (value.type) {
-    case Value::Type::BOOL:
-      return std::format_to(ctx.out(), "{}",
-                            value.as.boolean ? "true" : "false");
-    case Value::Type::NIL:
-      return std::format_to(ctx.out(), "nil");
-    case Value::Type::NUMBER:
-      return std::format_to(ctx.out(), "{}", value.as.number);
-    case Value::Type::OBJECT:
-      return std::format_to(ctx.out(), "object");
-    }
-    return ctx.out();
-  }
-};
-
-inline std::ostream &operator<<(std::ostream &os, const Value &value) {
-  switch (value.type) {
-  case Value::Type::BOOL:
-    os << (value.as.boolean ? "true" : "false");
-    break;
-  case Value::Type::NIL:
-    os << "nil";
-    break;
-  case Value::Type::NUMBER:
-    os << value.as.number;
-    break;
-  case Value::Type::OBJECT:
-    os << "object";
-    break;
-  }
-  return os;
-}
+// Forward declarations
+template <> struct std::formatter<Value>;
+std::ostream &operator<<(std::ostream &os, const Value &value);
