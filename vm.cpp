@@ -2,6 +2,7 @@
 #include "chunk.h"
 #include "compiler.h"
 #include "debug.h"
+#include "object.h"
 #include <iostream>
 
 VM &VM::getInstance() {
@@ -57,7 +58,18 @@ InterpretResult VM::run() {
       break;
     }
     case OpCode::ADD: {
-      BINARY_OP(Value::Number, +);
+      if (obj_helpers::IsString(peek(0)) && obj_helpers::IsString(peek(1))) {
+        std::string a = obj_helpers::AsString(peek(0))->str;
+        std::string b = obj_helpers::AsString(peek(1))->str;
+        push(Value::Object(new ObjString(a + b)));
+      } else if (Value::IsNumber(peek(0)) && Value::IsNumber(peek(1))) {
+        double b = Value::AsNumber(pop());
+        double a = Value::AsNumber(pop());
+        push(Value::Number(a + b));
+      } else {
+        runtimeError("Operands must be numbers or strings.");
+        return InterpretResult::InterpretRuntimeError;
+      }
       break;
     }
     case OpCode::SUBTRACT: {
@@ -126,7 +138,7 @@ Value VM::peek(int distance) const {
 
 void VM::printStack() {
   for (auto &value : stack_) {
-    std::cout << std::format("[ {} ] ", value);
+    std::cout << std::vformat("[ {} ] ", std::make_format_args(value));
   }
   std::cout << std::endl;
 }

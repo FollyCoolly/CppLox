@@ -51,6 +51,12 @@ bool Value::operator==(const Value &other) const {
     return true;
   case Type::NUMBER:
     return as.number == other.as.number;
+  case Type::OBJECT: {
+    // TODO: support other object types
+    ObjString *obj1 = obj_helpers::AsString(*this);
+    ObjString *obj2 = obj_helpers::AsString(other);
+    return obj1->str == obj2->str;
+  }
   default:
     return false; // unreachable
   }
