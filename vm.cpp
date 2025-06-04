@@ -59,9 +59,9 @@ InterpretResult VM::run() {
     }
     case OpCode::ADD: {
       if (obj_helpers::IsString(peek(0)) && obj_helpers::IsString(peek(1))) {
-        std::string a = obj_helpers::AsString(peek(0))->str;
-        std::string b = obj_helpers::AsString(peek(1))->str;
-        push(Value::Object(new ObjString(a + b)));
+        const auto &a = obj_helpers::AsString(peek(0))->str;
+        const auto &b = obj_helpers::AsString(peek(1))->str;
+        push(Value::Object(ObjString::getObject(a + b)));
       } else if (Value::IsNumber(peek(0)) && Value::IsNumber(peek(1))) {
         double b = Value::AsNumber(pop());
         double a = Value::AsNumber(pop());

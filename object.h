@@ -4,8 +4,10 @@
 #include "value.h"
 #include <format>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 struct Obj {
   enum class Type {
@@ -18,11 +20,36 @@ struct Obj {
 struct ObjString : Obj {
   std::string str;
 
-  template <typename T>
-  ObjString(T &&str) : Obj{Type::STRING}, str(std::forward<T>(str)) {}
+  static ObjString *getObject(const char *chars, int length) {
+    static std::unordered_map<std::string_view, std::unique_ptr<ObjString>>
+        interned_strings;
+    static std::vector<std::string> string_storage;
 
-  ObjString(const char *chars, int length)
-      : Obj{Type::STRING}, str(chars, length) {}
+    std::string_view key(chars, length);
+    auto it = interned_strings.find(key);
+    if (it != interned_strings.end()) {
+      return it->second.get();
+    }
+
+    string_storage.emplace_back(chars, length);
+    key = string_storage.back();
+
+    auto obj = std::make_unique<ObjString>(key);
+    ObjString *result = obj.get();
+    interned_strings[key] = std::move(obj);
+    return result;
+  }
+
+  static ObjString *getObject(const std::string &str) {
+    return getObject(str.c_str(), str.length());
+  }
+
+  ObjString(std::string_view str) : Obj{Type::STRING}, str(str) {}
+
+private:
+  ObjString() = delete;
+  ObjString(const ObjString &) = delete;
+  ObjString &operator=(const ObjString &) = delete;
 };
 
 namespace obj_helpers {

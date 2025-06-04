@@ -193,9 +193,9 @@ void Compiler::number(Compiler *compiler) {
 }
 
 void Compiler::string(Compiler *compiler) {
-  compiler->emitConstant(
-      Value::Object(new ObjString(compiler->parser_->previous().start + 1,
-                                  compiler->parser_->previous().length - 2)));
+  compiler->emitConstant(Value::Object(
+      ObjString::getObject(compiler->parser_->previous().start + 1,
+                           compiler->parser_->previous().length - 2)));
 }
 
 void Compiler::literal(Compiler *compiler) {

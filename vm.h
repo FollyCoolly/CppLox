@@ -2,6 +2,7 @@
 
 #include "chunk.h"
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 enum class InterpretResult {
