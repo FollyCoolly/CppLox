@@ -66,7 +66,19 @@ inline ObjString *AsString(const Value &value) {
 }
 } // namespace obj_helpers
 
-// Forward declarations
-template <> struct std::formatter<Obj>;
+template <> struct std::formatter<Obj> {
+  constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const Obj &obj, FormatContext &ctx) const {
+    switch (obj.type) {
+    case Obj::Type::STRING:
+      return std::format_to(ctx.out(), "{}",
+                            static_cast<const ObjString &>(obj).str);
+    }
+    return ctx.out();
+  }
+};
+
 std::ostream &operator<<(std::ostream &os, const Obj &obj);
 std::ostream &operator<<(std::ostream &os, const ObjString &obj);
