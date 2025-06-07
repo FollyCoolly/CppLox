@@ -49,3 +49,13 @@ void Parser::errorAt(const Token &token, const std::string &message) {
 
   hadError_ = true;
 }
+
+bool Parser::match(TokenType type) {
+  if (current_.type != type) {
+    return false;
+  }
+  advance();
+  return true;
+}
+
+bool Parser::check(TokenType type) const { return current_.type == type; }

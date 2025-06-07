@@ -18,6 +18,9 @@ public:
   const Token &previous() const { return previous_; }
   const Token &current() const { return current_; }
 
+  bool match(TokenType type);
+  bool check(TokenType type) const;
+
 private:
   Scanner scanner_;
   Token current_;

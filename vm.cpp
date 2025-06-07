@@ -119,6 +119,10 @@ InterpretResult VM::run() {
       BINARY_OP(Value::Bool, <);
       break;
     }
+    case OpCode::PRINT: {
+      std::cout << pop() << std::endl;
+      break;
+    }
     }
   }
 #undef BINARY_OP

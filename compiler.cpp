@@ -15,8 +15,9 @@ std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
   compilingChunk_ = std::make_shared<Chunk>();
   parser_->advance();
-  expression(this);
-  parser_->consume(TokenType::END_OF_FILE, "Expect end of expression.");
+  while (!parser_->match(TokenType::END_OF_FILE)) {
+    declaration(this);
+  }
   endCompiler();
   return compilingChunk_;
 }
@@ -212,4 +213,18 @@ void Compiler::literal(Compiler *compiler) {
   default:
     return;
   }
+}
+
+void Compiler::declaration(Compiler *compiler) { statement(compiler); }
+
+void Compiler::statement(Compiler *compiler) {
+  if (compiler->parser_->match(TokenType::PRINT)) {
+    printStatement(compiler);
+  }
+}
+
+void Compiler::printStatement(Compiler *compiler) {
+  expression(compiler);
+  compiler->parser_->consume(TokenType::SEMICOLON, "Expect ';' after value.");
+  compiler->emitByte(OpCode::PRINT);
 }
