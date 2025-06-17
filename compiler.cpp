@@ -241,7 +241,7 @@ void Compiler::varDeclaration(Compiler *compiler) {
 uint8_t Compiler::parseVariable(Compiler *compiler,
                                 const std::string &errorMessage) {
   compiler->parser_->consume(TokenType::IDENTIFIER, errorMessage);
-  return compiler->identifierConstant(compiler->parser_->previous().start);
+  return compiler->identifierConstant(compiler, compiler->parser_->previous());
 }
 
 uint8_t Compiler::identifierConstant(Compiler *compiler, const Token &name) {

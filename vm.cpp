@@ -136,41 +136,41 @@ InterpretResult VM::run() {
       break;
     }
     }
+  }
 #undef BINARY_OP
+}
+
+Value VM::pop() {
+  Value value = stack_.back();
+  stack_.pop_back();
+  return value;
+}
+
+void VM::push(Value value) { stack_.push_back(value); }
+
+Value VM::peek(int distance) const {
+  return stack_[stack_.size() - 1 - distance];
+}
+
+void VM::printStack() {
+  for (auto &value : stack_) {
+    std::cout << std::vformat("[ {} ] ", std::make_format_args(value));
   }
+  std::cout << std::endl;
+}
 
-  Value VM::pop() {
-    Value value = stack_.back();
-    stack_.pop_back();
-    return value;
-  }
+void VM::resetStack() { stack_.clear(); }
 
-  void VM::push(Value value) { stack_.push_back(value); }
+void VM::runtimeError(const std::string &message) {
+  std::cerr << message << std::endl;
 
-  Value VM::peek(int distance) const {
-    return stack_[stack_.size() - 1 - distance];
-  }
+  size_t instruction = codeIdx_ - 1;
+  int line = chunk_->lines[instruction];
+  std::cerr << "[line " << line << "] in script" << std::endl;
 
-  void VM::printStack() {
-    for (auto &value : stack_) {
-      std::cout << std::vformat("[ {} ] ", std::make_format_args(value));
-    }
-    std::cout << std::endl;
-  }
+  resetStack();
+}
 
-  void VM::resetStack() { stack_.clear(); }
-
-  void VM::runtimeError(const std::string &message) {
-    std::cerr << message << std::endl;
-
-    size_t instruction = codeIdx_ - 1;
-    int line = chunk_->lines[instruction];
-    std::cerr << "[line " << line << "] in script" << std::endl;
-
-    resetStack();
-  }
-
-  bool VM::isFalsey(const Value &value) {
-    return Value::IsNil(value) ||
-           (Value::IsBool(value) && !Value::AsBool(value));
-  }
+bool VM::isFalsey(const Value &value) {
+  return Value::IsNil(value) || (Value::IsBool(value) && !Value::AsBool(value));
+}
