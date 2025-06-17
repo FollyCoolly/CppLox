@@ -123,6 +123,10 @@ InterpretResult VM::run() {
       std::cout << pop() << std::endl;
       break;
     }
+    case OpCode::POP: {
+      pop();
+      break;
+    }
     }
   }
 #undef BINARY_OP

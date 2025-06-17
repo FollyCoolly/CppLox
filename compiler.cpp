@@ -220,7 +220,15 @@ void Compiler::declaration(Compiler *compiler) { statement(compiler); }
 void Compiler::statement(Compiler *compiler) {
   if (compiler->parser_->match(TokenType::PRINT)) {
     printStatement(compiler);
+  } else {
+    expressionStatement(compiler);
   }
+}
+
+void Compiler::expressionStatement(Compiler *compiler) {
+  expression(compiler);
+  compiler->parser_->consume(TokenType::SEMICOLON, "Expect ';' after value.");
+  compiler->emitByte(OpCode::POP);
 }
 
 void Compiler::printStatement(Compiler *compiler) {

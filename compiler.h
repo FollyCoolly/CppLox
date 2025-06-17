@@ -48,6 +48,7 @@ public:
   static void declaration(Compiler *compiler);
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
+  static void expressionStatement(Compiler *compiler);
   static void expression(Compiler *compiler);
   static void grouping(Compiler *compiler);
   static void unary(Compiler *compiler);

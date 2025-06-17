@@ -49,6 +49,8 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return simpleInstruction("OP_NIL", offset);
   case OpCode::PRINT:
     return simpleInstruction("OP_PRINT", offset);
+  case OpCode::POP:
+    return simpleInstruction("OP_POP", offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;
