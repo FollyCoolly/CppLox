@@ -1,8 +1,9 @@
 #pragma once
 
 #include "chunk.h"
+#include "value.h"
 #include <memory>
-#include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 enum class InterpretResult {
@@ -19,6 +20,8 @@ public:
   InterpretResult interpret(std::shared_ptr<Chunk> chunk);
 
 private:
+  std::unordered_map<std::string, Value> globals_;
+
   VM() = default;
   ~VM() = default;
 

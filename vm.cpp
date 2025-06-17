@@ -27,6 +27,9 @@ InterpretResult VM::run() {
   auto readConstant = [this, &readByte]() -> Value {
     return chunk_->constants[readByte()];
   };
+  auto readString = [this, &readConstant]() -> std::string {
+    return obj_helpers::AsString(readConstant())->str;
+  };
 #define BINARY_OP(valueType, op)                                               \
   do {                                                                         \
     if (!Value::IsNumber(peek(0)) || !Value::IsNumber(peek(1))) {              \
@@ -127,42 +130,47 @@ InterpretResult VM::run() {
       pop();
       break;
     }
+    case OpCode::DEFINE_GLOBAL: {
+      std::string name = readString();
+      globals_[name] = pop();
+      break;
     }
-  }
+    }
 #undef BINARY_OP
-}
-
-Value VM::pop() {
-  Value value = stack_.back();
-  stack_.pop_back();
-  return value;
-}
-
-void VM::push(Value value) { stack_.push_back(value); }
-
-Value VM::peek(int distance) const {
-  return stack_[stack_.size() - 1 - distance];
-}
-
-void VM::printStack() {
-  for (auto &value : stack_) {
-    std::cout << std::vformat("[ {} ] ", std::make_format_args(value));
   }
-  std::cout << std::endl;
-}
 
-void VM::resetStack() { stack_.clear(); }
+  Value VM::pop() {
+    Value value = stack_.back();
+    stack_.pop_back();
+    return value;
+  }
 
-void VM::runtimeError(const std::string &message) {
-  std::cerr << message << std::endl;
+  void VM::push(Value value) { stack_.push_back(value); }
 
-  size_t instruction = codeIdx_ - 1;
-  int line = chunk_->lines[instruction];
-  std::cerr << "[line " << line << "] in script" << std::endl;
+  Value VM::peek(int distance) const {
+    return stack_[stack_.size() - 1 - distance];
+  }
 
-  resetStack();
-}
+  void VM::printStack() {
+    for (auto &value : stack_) {
+      std::cout << std::vformat("[ {} ] ", std::make_format_args(value));
+    }
+    std::cout << std::endl;
+  }
 
-bool VM::isFalsey(const Value &value) {
-  return Value::IsNil(value) || (Value::IsBool(value) && !Value::AsBool(value));
-}
+  void VM::resetStack() { stack_.clear(); }
+
+  void VM::runtimeError(const std::string &message) {
+    std::cerr << message << std::endl;
+
+    size_t instruction = codeIdx_ - 1;
+    int line = chunk_->lines[instruction];
+    std::cerr << "[line " << line << "] in script" << std::endl;
+
+    resetStack();
+  }
+
+  bool VM::isFalsey(const Value &value) {
+    return Value::IsNil(value) ||
+           (Value::IsBool(value) && !Value::AsBool(value));
+  }

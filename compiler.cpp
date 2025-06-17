@@ -216,10 +216,41 @@ void Compiler::literal(Compiler *compiler) {
 }
 
 void Compiler::declaration(Compiler *compiler) {
-  statement(compiler);
+  if (compiler->parser_->match(TokenType::VAR)) {
+    varDeclaration(compiler);
+  } else {
+    statement(compiler);
+  }
   if (compiler->parser_->panicMode()) {
     synchronize(compiler);
   }
+}
+
+void Compiler::varDeclaration(Compiler *compiler) {
+  auto global = parseVariable(compiler, "Expect variable name.");
+
+  if (compiler->parser_->match(TokenType::EQUAL)) {
+    expression(compiler);
+  } else {
+    compiler->emitByte(OpCode::NIL);
+  }
+  compiler->parser_->consume(TokenType::SEMICOLON, "Expect ';' after value.");
+  defineVariable(compiler, global);
+}
+
+uint8_t Compiler::parseVariable(Compiler *compiler,
+                                const std::string &errorMessage) {
+  compiler->parser_->consume(TokenType::IDENTIFIER, errorMessage);
+  return compiler->identifierConstant(compiler->parser_->previous().start);
+}
+
+uint8_t Compiler::identifierConstant(Compiler *compiler, const Token &name) {
+  return compiler->makeConstant(
+      Value::Object(ObjString::getObject(name.start, name.length)));
+}
+
+void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
+  compiler->emitBytes(OpCode::DEFINE_GLOBAL, global);
 }
 
 void Compiler::statement(Compiler *compiler) {

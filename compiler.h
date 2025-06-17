@@ -2,6 +2,7 @@
 
 #include "chunk.h"
 #include "parser.h"
+#include "scanner.h"
 #include <memory>
 #include <string>
 #include <sys/types.h>
@@ -46,8 +47,13 @@ public:
   static const ParseRule *getRule(TokenType type);
 
   static void synchronize(Compiler *compiler);
+  static uint8_t parseVariable(Compiler *compiler,
+                               const std::string &errorMessage);
+  static uint8_t identifierConstant(Compiler *compiler, const Token &name);
+  static void defineVariable(Compiler *compiler, uint8_t global);
 
   static void declaration(Compiler *compiler);
+  static void varDeclaration(Compiler *compiler);
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
   static void expressionStatement(Compiler *compiler);
