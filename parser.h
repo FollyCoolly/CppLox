@@ -21,6 +21,9 @@ public:
   bool match(TokenType type);
   bool check(TokenType type) const;
 
+  bool panicMode() const { return panicMode_; }
+  void resetPanicMode() { panicMode_ = false; }
+
 private:
   Scanner scanner_;
   Token current_;

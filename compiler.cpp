@@ -215,7 +215,12 @@ void Compiler::literal(Compiler *compiler) {
   }
 }
 
-void Compiler::declaration(Compiler *compiler) { statement(compiler); }
+void Compiler::declaration(Compiler *compiler) {
+  statement(compiler);
+  if (compiler->parser_->panicMode()) {
+    synchronize(compiler);
+  }
+}
 
 void Compiler::statement(Compiler *compiler) {
   if (compiler->parser_->match(TokenType::PRINT)) {
@@ -235,4 +240,27 @@ void Compiler::printStatement(Compiler *compiler) {
   expression(compiler);
   compiler->parser_->consume(TokenType::SEMICOLON, "Expect ';' after value.");
   compiler->emitByte(OpCode::PRINT);
+}
+
+void Compiler::synchronize(Compiler *compiler) {
+  compiler->parser_->resetPanicMode();
+
+  while (compiler->parser_->current().type != TokenType::END_OF_FILE) {
+    if (compiler->parser_->previous().type == TokenType::SEMICOLON) {
+      return;
+    }
+    switch (compiler->parser_->current().type) {
+    case TokenType::CLASS:
+    case TokenType::FUN:
+    case TokenType::VAR:
+    case TokenType::FOR:
+    case TokenType::IF:
+    case TokenType::WHILE:
+    case TokenType::PRINT:
+    case TokenType::RETURN:
+      return;
+    default:; // do nothing
+    }
+    compiler->parser_->advance();
+  }
 }

@@ -45,6 +45,8 @@ public:
   static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
 
+  static void synchronize(Compiler *compiler);
+
   static void declaration(Compiler *compiler);
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
