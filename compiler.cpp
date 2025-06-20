@@ -295,3 +295,12 @@ void Compiler::synchronize(Compiler *compiler) {
     compiler->parser_->advance();
   }
 }
+
+void Compiler::variable(Compiler *compiler) {
+  namedVariable(compiler, compiler->parser_->previous());
+}
+
+void Compiler::namedVariable(Compiler *compiler, const Token &name) {
+  uint8_t arg = identifierConstant(compiler, name);
+  compiler->emitBytes(OpCode::GET_GLOBAL, arg);
+}

@@ -64,6 +64,8 @@ public:
   static void number(Compiler *compiler);
   static void literal(Compiler *compiler);
   static void string(Compiler *compiler);
+  static void variable(Compiler *compiler);
+  static void namedVariable(Compiler *compiler, const Token &name);
 
 private:
   std::shared_ptr<Chunk> compilingChunk_;
