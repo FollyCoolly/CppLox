@@ -71,7 +71,8 @@ void Compiler::parsePrecedence(Compiler *compiler, Precedence precedence) {
     return;
   }
 
-  prefixRule(compiler);
+  bool canAssign = precedence <= Precedence::ASSIGNMENT;
+  prefixRule(compiler, canAssign);
 
   while (precedence <=
          compiler->getRule(compiler->parser_->current().type)->precedence) {
@@ -83,7 +84,11 @@ void Compiler::parsePrecedence(Compiler *compiler, Precedence precedence) {
       return;
     }
 
-    infixRule(compiler);
+    infixRule(compiler, canAssign);
+  }
+
+  if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
+    compiler->parser_->error("Invalid assignment target.");
   }
 }
 
@@ -112,6 +117,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::LESS_EQUAL,
        {nullptr, Compiler::binary, Precedence::COMPARISON}},
       {TokenType::STRING, {Compiler::string, nullptr, Precedence::NONE}},
+      {TokenType::IDENTIFIER, {Compiler::variable, nullptr, Precedence::NONE}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -124,13 +130,13 @@ void Compiler::expression(Compiler *compiler) {
   parsePrecedence(compiler, Precedence::ASSIGNMENT);
 }
 
-void Compiler::grouping(Compiler *compiler) {
+void Compiler::grouping(Compiler *compiler, bool canAssign) {
   expression(compiler);
   compiler->parser_->consume(TokenType::RIGHT_PAREN,
                              "Expect ')' after expression.");
 }
 
-void Compiler::unary(Compiler *compiler) {
+void Compiler::unary(Compiler *compiler, bool canAssign) {
   TokenType operatorType = compiler->parser_->previous().type;
 
   expression(compiler);
@@ -147,7 +153,7 @@ void Compiler::unary(Compiler *compiler) {
   }
 }
 
-void Compiler::binary(Compiler *compiler) {
+void Compiler::binary(Compiler *compiler, bool canAssign) {
   TokenType operatorType = compiler->parser_->previous().type;
   auto rule = getRule(operatorType);
   parsePrecedence(compiler, static_cast<Precedence>(
@@ -188,18 +194,18 @@ void Compiler::binary(Compiler *compiler) {
   }
 }
 
-void Compiler::number(Compiler *compiler) {
+void Compiler::number(Compiler *compiler, bool canAssign) {
   double value = std::stod(compiler->parser_->previous().start);
   compiler->emitConstant(Value::Number(value));
 }
 
-void Compiler::string(Compiler *compiler) {
+void Compiler::string(Compiler *compiler, bool canAssign) {
   compiler->emitConstant(Value::Object(
       ObjString::getObject(compiler->parser_->previous().start + 1,
                            compiler->parser_->previous().length - 2)));
 }
 
-void Compiler::literal(Compiler *compiler) {
+void Compiler::literal(Compiler *compiler, bool canAssign) {
   switch (compiler->parser_->previous().type) {
   case TokenType::FALSE:
     compiler->emitByte(OpCode::FALSE);
@@ -296,11 +302,18 @@ void Compiler::synchronize(Compiler *compiler) {
   }
 }
 
-void Compiler::variable(Compiler *compiler) {
-  namedVariable(compiler, compiler->parser_->previous());
+void Compiler::variable(Compiler *compiler, bool canAssign) {
+  namedVariable(compiler, compiler->parser_->previous(), canAssign);
 }
 
-void Compiler::namedVariable(Compiler *compiler, const Token &name) {
+void Compiler::namedVariable(Compiler *compiler, const Token &name,
+                             bool canAssign) {
   uint8_t arg = identifierConstant(compiler, name);
-  compiler->emitBytes(OpCode::GET_GLOBAL, arg);
+
+  if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
+    expression(compiler);
+    compiler->emitBytes(OpCode::SET_GLOBAL, arg);
+  } else {
+    compiler->emitBytes(OpCode::GET_GLOBAL, arg);
+  }
 }

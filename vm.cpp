@@ -145,6 +145,16 @@ InterpretResult VM::run() {
       push(it->second);
       break;
     }
+    case OpCode::SET_GLOBAL: {
+      std::string name = readString();
+      auto it = globals_.find(name);
+      if (it == globals_.end()) {
+        runtimeError("Undefined variable '" + name + "'.");
+        return InterpretResult::InterpretRuntimeError;
+      }
+      globals_[name] = peek(0);
+      break;
+    }
     }
   }
 #undef BINARY_OP
