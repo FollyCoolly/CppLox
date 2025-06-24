@@ -30,6 +30,11 @@ struct ParseRule {
   Precedence precedence;
 };
 
+struct Local {
+  Token name;
+  int depth;
+};
+
 class Compiler {
 public:
   std::shared_ptr<Chunk> compile(const std::string &source);
@@ -71,4 +76,6 @@ public:
 private:
   std::shared_ptr<Chunk> compilingChunk_;
   std::unique_ptr<Parser> parser_;
+  std::vector<Local> locals_;
+  int scopeDepth_ = 0;
 };
