@@ -72,6 +72,10 @@ public:
   static void variable(Compiler *compiler, bool canAssign);
   static void namedVariable(Compiler *compiler, const Token &name,
                             bool canAssign);
+  static void block(Compiler *compiler);
+
+  static void beginScope(Compiler *compiler);
+  static void endScope(Compiler *compiler);
 
 private:
   std::shared_ptr<Chunk> compilingChunk_;

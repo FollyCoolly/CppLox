@@ -262,6 +262,8 @@ void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
 void Compiler::statement(Compiler *compiler) {
   if (compiler->parser_->match(TokenType::PRINT)) {
     printStatement(compiler);
+  } else if (compiler->parser_->match(TokenType::LEFT_BRACE)) {
+    block(compiler);
   } else {
     expressionStatement(compiler);
   }
@@ -317,3 +319,15 @@ void Compiler::namedVariable(Compiler *compiler, const Token &name,
     compiler->emitBytes(OpCode::GET_GLOBAL, arg);
   }
 }
+
+void Compiler::block(Compiler *compiler) {
+  while (!compiler->parser_->check(TokenType::RIGHT_BRACE) &&
+         !compiler->parser_->check(TokenType::END_OF_FILE)) {
+    declaration(compiler);
+  }
+  compiler->parser_->consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+}
+
+void Compiler::beginScope(Compiler *compiler) { compiler->scopeDepth_++; }
+
+void Compiler::endScope(Compiler *compiler) { compiler->scopeDepth_--; }
