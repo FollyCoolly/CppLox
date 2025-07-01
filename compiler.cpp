@@ -286,7 +286,7 @@ uint8_t Compiler::identifierConstant(const Token &name) {
 
 void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
   if (compiler->scopeDepth_ > 0) {
-    compiler->addLocal(compiler->parser_->previous());
+    compiler->markInitialized();
     return;
   }
   compiler->emitBytes(OpCode::DEFINE_GLOBAL, global);
@@ -297,8 +297,10 @@ void Compiler::addLocal(const Token &name) {
     parser_->error("Too many local variables in function.");
     return;
   }
-  locals_.push_back({name, scopeDepth_});
+  locals_.push_back({name, -1 /* set depth -1 to indicate not initialized */});
 }
+
+void Compiler::markInitialized() { locals_.back().depth = scopeDepth_; }
 
 void Compiler::statement(Compiler *compiler) {
   if (compiler->parser_->match(TokenType::PRINT)) {
@@ -353,6 +355,9 @@ int Compiler::resolveLocal(const Token &name) {
   for (int i = locals_.size() - 1; i >= 0; i--) {
     auto &local = locals_[i];
     if (identifiersEqual(local.name, name)) {
+      if (local.depth == -1) {
+        parser_->error("Can't read local variable in its own initializer.");
+      }
       return i;
     }
   }

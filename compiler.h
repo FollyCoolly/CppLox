@@ -51,6 +51,7 @@ public:
   void addLocal(const Token &name);
   int resolveLocal(const Token &name);
   uint8_t identifierConstant(const Token &name);
+  void markInitialized();
 
   static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
