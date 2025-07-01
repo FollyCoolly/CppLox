@@ -155,6 +155,16 @@ InterpretResult VM::run() {
       globals_[name] = peek(0);
       break;
     }
+    case OpCode::GET_LOCAL: {
+      uint8_t slot = readByte();
+      push(stack_[slot]);
+      break;
+    }
+    case OpCode::SET_LOCAL: {
+      uint8_t slot = readByte();
+      stack_[slot] = peek(0);
+      break;
+    }
     }
   }
 #undef BINARY_OP

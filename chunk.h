@@ -24,6 +24,8 @@ enum class OpCode : uint8_t {
   DEFINE_GLOBAL,
   GET_GLOBAL,
   SET_GLOBAL,
+  GET_LOCAL,
+  SET_LOCAL,
 };
 
 constexpr uint8_t to_underlying(OpCode op) { return static_cast<uint8_t>(op); }

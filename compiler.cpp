@@ -257,7 +257,7 @@ uint8_t Compiler::parseVariable(Compiler *compiler,
   if (compiler->scopeDepth_ > 0) {
     return 0;
   }
-  return compiler->identifierConstant(compiler, compiler->parser_->previous());
+  return compiler->identifierConstant(compiler->parser_->previous());
 }
 
 void Compiler::declareVariable(Compiler *compiler) {
@@ -279,8 +279,8 @@ void Compiler::declareVariable(Compiler *compiler) {
   compiler->addLocal(name);
 }
 
-uint8_t Compiler::identifierConstant(Compiler *compiler, const Token &name) {
-  return compiler->makeConstant(
+uint8_t Compiler::identifierConstant(const Token &name) {
+  return makeConstant(
       Value::Object(ObjString::getObject(name.start, name.length)));
 }
 
@@ -349,15 +349,36 @@ void Compiler::variable(Compiler *compiler, bool canAssign) {
   namedVariable(compiler, compiler->parser_->previous(), canAssign);
 }
 
+int Compiler::resolveLocal(const Token &name) {
+  for (int i = locals_.size() - 1; i >= 0; i--) {
+    auto &local = locals_[i];
+    if (identifiersEqual(local.name, name)) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
 void Compiler::namedVariable(Compiler *compiler, const Token &name,
                              bool canAssign) {
-  uint8_t arg = identifierConstant(compiler, name);
+
+  OpCode getOp, setOp;
+  int arg = compiler->resolveLocal(name);
+  if (arg != -1) {
+    getOp = OpCode::GET_LOCAL;
+    setOp = OpCode::SET_LOCAL;
+  } else {
+    arg = compiler->identifierConstant(name);
+    getOp = OpCode::GET_GLOBAL;
+    setOp = OpCode::SET_GLOBAL;
+  }
 
   if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
     expression(compiler);
-    compiler->emitBytes(OpCode::SET_GLOBAL, arg);
+    compiler->emitBytes(setOp, static_cast<uint8_t>(arg));
   } else {
-    compiler->emitBytes(OpCode::GET_GLOBAL, arg);
+    compiler->emitBytes(getOp, static_cast<uint8_t>(arg));
   }
 }
 

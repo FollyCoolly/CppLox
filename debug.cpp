@@ -15,6 +15,12 @@ int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
                            chunk.constants[constantIdx]);
   return offset + 2;
 }
+
+int byteInstruction(std::string_view name, const Chunk &chunk, int offset) {
+  uint8_t slot = chunk.code[offset + 1];
+  std::cout << std::format("{:<16} {:>4}\n", name, slot);
+  return offset + 2;
+}
 } // namespace
 
 void disassembleChunk(const Chunk &chunk, std::string_view name) {
@@ -57,6 +63,10 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return constantInstruction("OP_GET_GLOBAL", chunk, offset);
   case OpCode::SET_GLOBAL:
     return constantInstruction("OP_SET_GLOBAL", chunk, offset);
+  case OpCode::GET_LOCAL:
+    return byteInstruction("OP_GET_LOCAL", chunk, offset);
+  case OpCode::SET_LOCAL:
+    return byteInstruction("OP_SET_LOCAL", chunk, offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;
