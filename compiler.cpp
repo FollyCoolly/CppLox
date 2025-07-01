@@ -11,6 +11,12 @@
 #include "debug.h"
 #endif
 
+namespace {
+bool identifiersEqual(const Token &a, const Token &b) {
+  return a.length == b.length && std::memcmp(a.start, b.start, a.length) == 0;
+}
+} // namespace
+
 std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
   compilingChunk_ = std::make_shared<Chunk>();
@@ -247,7 +253,30 @@ void Compiler::varDeclaration(Compiler *compiler) {
 uint8_t Compiler::parseVariable(Compiler *compiler,
                                 const std::string &errorMessage) {
   compiler->parser_->consume(TokenType::IDENTIFIER, errorMessage);
+  declareVariable(compiler);
+  if (compiler->scopeDepth_ > 0) {
+    return 0;
+  }
   return compiler->identifierConstant(compiler, compiler->parser_->previous());
+}
+
+void Compiler::declareVariable(Compiler *compiler) {
+  if (compiler->scopeDepth_ == 0) {
+    return;
+  }
+  const auto &name = compiler->parser_->previous();
+  // check if the variable is already declared in this scope
+  for (int i = compiler->locals_.size() - 1; i >= 0; i--) {
+    auto &local = compiler->locals_[i];
+    if (local.depth != -1 && local.depth < compiler->scopeDepth_) {
+      break;
+    }
+    if (identifiersEqual(local.name, name)) {
+      compiler->parser_->error(
+          "Variable with this name already declared in this scope.");
+    }
+  }
+  compiler->addLocal(name);
 }
 
 uint8_t Compiler::identifierConstant(Compiler *compiler, const Token &name) {
@@ -256,7 +285,19 @@ uint8_t Compiler::identifierConstant(Compiler *compiler, const Token &name) {
 }
 
 void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
+  if (compiler->scopeDepth_ > 0) {
+    compiler->addLocal(compiler->parser_->previous());
+    return;
+  }
   compiler->emitBytes(OpCode::DEFINE_GLOBAL, global);
+}
+
+void Compiler::addLocal(const Token &name) {
+  if (locals_.size() == UINT8_MAX) {
+    parser_->error("Too many local variables in function.");
+    return;
+  }
+  locals_.push_back({name, scopeDepth_});
 }
 
 void Compiler::statement(Compiler *compiler) {

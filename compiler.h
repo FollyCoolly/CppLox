@@ -48,6 +48,8 @@ public:
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
 
+  void addLocal(const Token &name);
+
   static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
 
@@ -56,6 +58,7 @@ public:
                                const std::string &errorMessage);
   static uint8_t identifierConstant(Compiler *compiler, const Token &name);
   static void defineVariable(Compiler *compiler, uint8_t global);
+  static void declareVariable(Compiler *compiler);
 
   static void declaration(Compiler *compiler);
   static void varDeclaration(Compiler *compiler);
