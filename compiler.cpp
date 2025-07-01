@@ -371,4 +371,11 @@ void Compiler::block(Compiler *compiler) {
 
 void Compiler::beginScope(Compiler *compiler) { compiler->scopeDepth_++; }
 
-void Compiler::endScope(Compiler *compiler) { compiler->scopeDepth_--; }
+void Compiler::endScope(Compiler *compiler) {
+  compiler->scopeDepth_--;
+  while (compiler->locals_.size() > 0 &&
+         compiler->locals_.back().depth > compiler->scopeDepth_) {
+    compiler->emitByte(OpCode::POP);
+    compiler->locals_.pop_back();
+  }
+}
