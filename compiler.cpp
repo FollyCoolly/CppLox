@@ -321,8 +321,19 @@ void Compiler::ifStatement(Compiler *compiler) {
                              "Expect ')' after condition.");
 
   int thenJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
+  compiler->emitByte(OpCode::POP);
   compiler->statement(compiler);
+
+  int elseJump = compiler->emitJump(OpCode::JUMP);
+
   compiler->patchJump(thenJump);
+
+  compiler->emitByte(OpCode::POP);
+  if (compiler->parser_->match(TokenType::ELSE)) {
+    compiler->statement(compiler);
+  }
+
+  compiler->patchJump(elseJump);
 }
 
 int Compiler::emitJump(OpCode op) {

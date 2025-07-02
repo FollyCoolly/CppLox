@@ -172,6 +172,11 @@ InterpretResult VM::run() {
       }
       break;
     }
+    case OpCode::JUMP: {
+      uint16_t offset = readByte() << 8 | readByte();
+      codeIdx_ += offset;
+      break;
+    }
     }
   }
 #undef BINARY_OP

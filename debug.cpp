@@ -21,6 +21,15 @@ int byteInstruction(std::string_view name, const Chunk &chunk, int offset) {
   std::cout << std::format("{:<16} {:>4}\n", name, slot);
   return offset + 2;
 }
+
+int jumpInstruction(std::string_view name, const Chunk &chunk, int sign,
+                    int offset) {
+  uint16_t jump = static_cast<uint16_t>(chunk.code[offset + 1]) << 8 |
+                  (chunk.code[offset + 2]);
+  std::cout << std::format("{:<16} {:>4} -> {}\n", name, offset,
+                           offset + 3 + sign * jump);
+  return offset + 3;
+}
 } // namespace
 
 void disassembleChunk(const Chunk &chunk, std::string_view name) {
@@ -67,6 +76,10 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return byteInstruction("OP_GET_LOCAL", chunk, offset);
   case OpCode::SET_LOCAL:
     return byteInstruction("OP_SET_LOCAL", chunk, offset);
+  case OpCode::JUMP_IF_FALSE:
+    return jumpInstruction("OP_JUMP_IF_FALSE", chunk, 1, offset);
+  case OpCode::JUMP:
+    return jumpInstruction("OP_JUMP", chunk, 1, offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;
