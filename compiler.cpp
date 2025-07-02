@@ -305,11 +305,43 @@ void Compiler::markInitialized() { locals_.back().depth = scopeDepth_; }
 void Compiler::statement(Compiler *compiler) {
   if (compiler->parser_->match(TokenType::PRINT)) {
     printStatement(compiler);
+  } else if (compiler->parser_->match(TokenType::IF)) {
+    ifStatement(compiler);
   } else if (compiler->parser_->match(TokenType::LEFT_BRACE)) {
     block(compiler);
   } else {
     expressionStatement(compiler);
   }
+}
+
+void Compiler::ifStatement(Compiler *compiler) {
+  compiler->parser_->consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+  expression(compiler);
+  compiler->parser_->consume(TokenType::RIGHT_PAREN,
+                             "Expect ')' after condition.");
+
+  int thenJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
+  compiler->statement(compiler);
+  compiler->patchJump(thenJump);
+}
+
+int Compiler::emitJump(OpCode op) {
+  emitByte(op);
+  emitByte(0xFF);
+  emitByte(0xFF);
+  return compilingChunk_->code.size() - 2;
+}
+
+void Compiler::patchJump(int offset) {
+  // -2 to adjust for the bytecode for the jump offset itself.
+  int jump = compilingChunk_->code.size() - offset - 2;
+  if (jump > UINT16_MAX) {
+    parser_->error("Too much code to jump over.");
+  }
+
+  auto &code = compilingChunk_->code;
+  code[offset] = (jump >> 8) & 0xFF;
+  code[offset + 1] = jump & 0xFF;
 }
 
 void Compiler::expressionStatement(Compiler *compiler) {

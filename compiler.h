@@ -48,6 +48,9 @@ public:
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
 
+  int emitJump(OpCode op);
+  void patchJump(int offset);
+
   void addLocal(const Token &name);
   int resolveLocal(const Token &name);
   uint8_t identifierConstant(const Token &name);
@@ -66,6 +69,7 @@ public:
   static void varDeclaration(Compiler *compiler);
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
+  static void ifStatement(Compiler *compiler);
   static void expressionStatement(Compiler *compiler);
   static void expression(Compiler *compiler);
   static void grouping(Compiler *compiler, bool canAssign);

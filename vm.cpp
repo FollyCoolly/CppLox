@@ -165,6 +165,13 @@ InterpretResult VM::run() {
       stack_[slot] = peek(0);
       break;
     }
+    case OpCode::JUMP_IF_FALSE: {
+      uint16_t offset = readByte() << 8 | readByte();
+      if (isFalsey(peek(0))) {
+        codeIdx_ += offset;
+      }
+      break;
+    }
     }
   }
 #undef BINARY_OP
