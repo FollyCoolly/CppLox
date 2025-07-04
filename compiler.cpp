@@ -124,6 +124,8 @@ const ParseRule *Compiler::getRule(TokenType type) {
        {nullptr, Compiler::binary, Precedence::COMPARISON}},
       {TokenType::STRING, {Compiler::string, nullptr, Precedence::NONE}},
       {TokenType::IDENTIFIER, {Compiler::variable, nullptr, Precedence::NONE}},
+      {TokenType::AND, {Compiler::logicalAnd, nullptr, Precedence::AND}},
+      {TokenType::OR, {Compiler::logicalOr, nullptr, Precedence::OR}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -353,6 +355,26 @@ void Compiler::patchJump(int offset) {
   auto &code = compilingChunk_->code;
   code[offset] = (jump >> 8) & 0xFF;
   code[offset + 1] = jump & 0xFF;
+}
+
+void Compiler::logicalAnd(Compiler *compiler, bool canAssign) {
+  int endJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
+
+  compiler->emitByte(OpCode::POP);
+  compiler->parsePrecedence(compiler, Precedence::AND);
+
+  compiler->patchJump(endJump);
+}
+
+void Compiler::logicalOr(Compiler *compiler, bool canAssign) {
+  int elseJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
+  int endJump = compiler->emitJump(OpCode::JUMP);
+
+  compiler->patchJump(elseJump);
+  compiler->emitByte(OpCode::POP);
+
+  compiler->parsePrecedence(compiler, Precedence::OR);
+  compiler->patchJump(endJump);
 }
 
 void Compiler::expressionStatement(Compiler *compiler) {

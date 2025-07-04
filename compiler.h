@@ -82,6 +82,8 @@ public:
   static void namedVariable(Compiler *compiler, const Token &name,
                             bool canAssign);
   static void block(Compiler *compiler);
+  static void logicalAnd(Compiler *compiler, bool canAssign);
+  static void logicalOr(Compiler *compiler, bool canAssign);
 
   static void beginScope(Compiler *compiler);
   static void endScope(Compiler *compiler);
