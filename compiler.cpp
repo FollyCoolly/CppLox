@@ -311,11 +311,60 @@ void Compiler::statement(Compiler *compiler) {
     ifStatement(compiler);
   } else if (compiler->parser_->match(TokenType::WHILE)) {
     whileStatement(compiler);
+  } else if (compiler->parser_->match(TokenType::FOR)) {
+    forStatement(compiler);
   } else if (compiler->parser_->match(TokenType::LEFT_BRACE)) {
     block(compiler);
   } else {
     expressionStatement(compiler);
   }
+}
+
+void Compiler::forStatement(Compiler *compiler) {
+  beginScope(compiler);
+
+  compiler->parser_->consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+  if (compiler->parser_->match(TokenType::SEMICOLON)) {
+    // empty initializer
+  } else if (compiler->parser_->match(TokenType::VAR)) {
+    varDeclaration(compiler);
+  } else {
+    expressionStatement(compiler);
+  }
+
+  int loopStart = compiler->compilingChunk_->code.size();
+  int exitJump = -1;
+  if (!compiler->parser_->match(TokenType::SEMICOLON)) {
+    expression(compiler);
+    compiler->parser_->consume(TokenType::SEMICOLON,
+                               "Expect ';' after for loop condition.");
+    // Jump to the end of the loop if the condition is false
+    exitJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
+    compiler->emitByte(OpCode::POP);
+  }
+
+  if (compiler->parser_->match(TokenType::RIGHT_PAREN)) {
+    int bodyJump = compiler->emitJump(OpCode::JUMP);
+    int incrementStart = compiler->compilingChunk_->code.size();
+    expression(compiler);
+    compiler->emitByte(OpCode::POP);
+    compiler->parser_->consume(TokenType::RIGHT_PAREN,
+                               "Expect ')' after for clauses.");
+
+    compiler->emitLoop(loopStart);
+    loopStart = incrementStart;
+    compiler->patchJump(bodyJump);
+  }
+
+  compiler->statement(compiler);
+  compiler->emitLoop(loopStart);
+
+  if (exitJump != -1) {
+    compiler->patchJump(exitJump);
+    compiler->emitByte(OpCode::POP);
+  }
+
+  endScope(compiler);
 }
 
 void Compiler::whileStatement(Compiler *compiler) {

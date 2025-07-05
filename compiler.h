@@ -86,6 +86,7 @@ public:
   static void logicalAnd(Compiler *compiler, bool canAssign);
   static void logicalOr(Compiler *compiler, bool canAssign);
   static void whileStatement(Compiler *compiler);
+  static void forStatement(Compiler *compiler);
 
   static void beginScope(Compiler *compiler);
   static void endScope(Compiler *compiler);
