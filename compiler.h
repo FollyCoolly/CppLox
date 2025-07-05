@@ -50,6 +50,7 @@ public:
 
   int emitJump(OpCode op);
   void patchJump(int offset);
+  void emitLoop(int loopStart);
 
   void addLocal(const Token &name);
   int resolveLocal(const Token &name);
@@ -84,6 +85,7 @@ public:
   static void block(Compiler *compiler);
   static void logicalAnd(Compiler *compiler, bool canAssign);
   static void logicalOr(Compiler *compiler, bool canAssign);
+  static void whileStatement(Compiler *compiler);
 
   static void beginScope(Compiler *compiler);
   static void endScope(Compiler *compiler);
