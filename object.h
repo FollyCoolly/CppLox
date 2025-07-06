@@ -56,11 +56,12 @@ private:
 
 struct ObjFunction : Obj {
   int arity;
-  Chunk chunk;
+  std::unique_ptr<Chunk> chunk;
   ObjString *name;
 
-  ObjFunction(int arity, Chunk chunk, ObjString *name)
-      : Obj{Type::FUNCTION}, arity(arity), chunk(chunk), name(name) {}
+  ObjFunction(int arity, ObjString *name)
+      : Obj{Type::FUNCTION}, arity(arity), chunk(std::make_unique<Chunk>()),
+        name(name) {}
 };
 
 namespace obj_helpers {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chunk.h"
+#include "object.h"
 #include "parser.h"
 #include "scanner.h"
 #include <memory>
@@ -39,6 +40,8 @@ class Compiler {
 public:
   std::shared_ptr<Chunk> compile(const std::string &source);
   void endCompiler();
+
+  Chunk *currentChunk() { return compilingFunction_->chunk.get(); }
 
   void emitByte(OpCode op);
   void emitByte(uint8_t byte);
@@ -92,7 +95,7 @@ public:
   static void endScope(Compiler *compiler);
 
 private:
-  std::shared_ptr<Chunk> compilingChunk_;
+  std::shared_ptr<ObjFunction> compilingFunction_;
   std::unique_ptr<Parser> parser_;
   std::vector<Local> locals_;
   int scopeDepth_ = 0;

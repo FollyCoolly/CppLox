@@ -19,28 +19,28 @@ bool identifiersEqual(const Token &a, const Token &b) {
 
 std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
-  compilingChunk_ = std::make_shared<Chunk>();
+  compilingFunction_ = std::make_shared<ObjFunction>(0, nullptr);
   parser_->advance();
   while (!parser_->match(TokenType::END_OF_FILE)) {
     declaration(this);
   }
   endCompiler();
-  return compilingChunk_;
+  return std::shared_ptr<Chunk>(compilingFunction_->chunk.release());
 }
 
 void Compiler::endCompiler() {
   emitReturn();
 #ifdef DEBUG_PRINT_CODE
-  disassembleChunk(*compilingChunk_, "code");
+  disassembleChunk(*currentChunk(), "code");
 #endif
 }
 
 void Compiler::emitByte(OpCode op) {
-  compilingChunk_->Write(to_underlying(op), parser_->previous().line);
+  currentChunk()->Write(to_underlying(op), parser_->previous().line);
 }
 
 void Compiler::emitByte(uint8_t byte) {
-  compilingChunk_->Write(byte, parser_->previous().line);
+  currentChunk()->Write(byte, parser_->previous().line);
 }
 
 void Compiler::emitBytes(OpCode op, uint8_t byte) {
@@ -60,7 +60,7 @@ void Compiler::emitConstant(Value value) {
 }
 
 uint8_t Compiler::makeConstant(Value value) {
-  auto constantIndex = compilingChunk_->AddConstant(value);
+  auto constantIndex = currentChunk()->AddConstant(value);
   if (constantIndex >= UINT8_MAX) {
     parser_->error("Too many constants in one chunk.");
     return 0;
@@ -332,7 +332,7 @@ void Compiler::forStatement(Compiler *compiler) {
     expressionStatement(compiler);
   }
 
-  int loopStart = compiler->compilingChunk_->code.size();
+  int loopStart = compiler->currentChunk()->code.size();
   int exitJump = -1;
   if (!compiler->parser_->match(TokenType::SEMICOLON)) {
     expression(compiler);
@@ -345,7 +345,7 @@ void Compiler::forStatement(Compiler *compiler) {
 
   if (compiler->parser_->match(TokenType::RIGHT_PAREN)) {
     int bodyJump = compiler->emitJump(OpCode::JUMP);
-    int incrementStart = compiler->compilingChunk_->code.size();
+    int incrementStart = compiler->currentChunk()->code.size();
     expression(compiler);
     compiler->emitByte(OpCode::POP);
     compiler->parser_->consume(TokenType::RIGHT_PAREN,
@@ -368,7 +368,7 @@ void Compiler::forStatement(Compiler *compiler) {
 }
 
 void Compiler::whileStatement(Compiler *compiler) {
-  int loopStart = compiler->compilingChunk_->code.size();
+  int loopStart = compiler->currentChunk()->code.size();
 
   compiler->parser_->consume(TokenType::LEFT_PAREN,
                              "Expect '(' after 'while'.");
@@ -389,7 +389,7 @@ void Compiler::whileStatement(Compiler *compiler) {
 
 void Compiler::emitLoop(int loopStart) {
   emitByte(OpCode::LOOP);
-  int offset = compilingChunk_->code.size() - loopStart + 2;
+  int offset = currentChunk()->code.size() - loopStart + 2;
   if (offset > UINT16_MAX) {
     parser_->error("Loop body too large.");
   }
@@ -423,17 +423,17 @@ int Compiler::emitJump(OpCode op) {
   emitByte(op);
   emitByte(0xFF);
   emitByte(0xFF);
-  return compilingChunk_->code.size() - 2;
+  return currentChunk()->code.size() - 2;
 }
 
 void Compiler::patchJump(int offset) {
   // -2 to adjust for the bytecode for the jump offset itself.
-  int jump = compilingChunk_->code.size() - offset - 2;
+  int jump = currentChunk()->code.size() - offset - 2;
   if (jump > UINT16_MAX) {
     parser_->error("Too much code to jump over.");
   }
 
-  auto &code = compilingChunk_->code;
+  auto &code = currentChunk()->code;
   code[offset] = (jump >> 8) & 0xFF;
   code[offset + 1] = jump & 0xFF;
 }
