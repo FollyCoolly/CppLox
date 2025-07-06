@@ -8,11 +8,9 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
   case Obj::Type::STRING:
     os << static_cast<const ObjString &>(obj).str;
     break;
+  case Obj::Type::FUNCTION:
+    os << "<fn " << static_cast<const ObjFunction &>(obj).name->str << ">";
+    break;
   }
-  return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const ObjString &obj) {
-  os << obj.str;
   return os;
 }

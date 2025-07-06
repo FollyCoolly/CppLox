@@ -1,5 +1,6 @@
 #pragma once
 
+#include "chunk.h"
 #include "common.h"
 #include "value.h"
 #include <format>
@@ -12,6 +13,7 @@
 struct Obj {
   enum class Type {
     STRING,
+    FUNCTION,
   };
 
   Type type;
@@ -52,6 +54,15 @@ private:
   ObjString &operator=(const ObjString &) = delete;
 };
 
+struct ObjFunction : Obj {
+  int arity;
+  Chunk chunk;
+  ObjString *name;
+
+  ObjFunction(int arity, Chunk chunk, ObjString *name)
+      : Obj{Type::FUNCTION}, arity(arity), chunk(chunk), name(name) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT && value.as.obj->type == type;
@@ -62,6 +73,14 @@ inline bool IsString(const Value &value) {
 }
 
 inline ObjString *AsString(const Value &value) {
+  return static_cast<ObjString *>(Value::AsObject(value));
+}
+
+inline ObjFunction *AsFunction(const Value &value) {
+  return static_cast<ObjFunction *>(Value::AsObject(value));
+}
+
+inline ObjString *AsObjString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
@@ -75,10 +94,12 @@ template <> struct std::formatter<Obj> {
     case Obj::Type::STRING:
       return std::format_to(ctx.out(), "{}",
                             static_cast<const ObjString &>(obj).str);
+    case Obj::Type::FUNCTION:
+      return std::format_to(ctx.out(), "<fn {}>",
+                            static_cast<const ObjFunction &>(obj).name->str);
     }
     return ctx.out();
   }
 };
 
 std::ostream &operator<<(std::ostream &os, const Obj &obj);
-std::ostream &operator<<(std::ostream &os, const ObjString &obj);
