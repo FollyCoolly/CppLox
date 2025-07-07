@@ -9,7 +9,11 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
     os << static_cast<const ObjString &>(obj).str;
     break;
   case Obj::Type::FUNCTION:
-    os << "<fn " << static_cast<const ObjFunction &>(obj).name->str << ">";
+    if (static_cast<const ObjFunction &>(obj).name != nullptr) {
+      os << "<fn " << static_cast<const ObjFunction &>(obj).name->str << ">";
+    } else {
+      os << "<script>";
+    }
     break;
   }
   return os;

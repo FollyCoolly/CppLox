@@ -17,22 +17,28 @@ bool identifiersEqual(const Token &a, const Token &b) {
 }
 } // namespace
 
-std::shared_ptr<Chunk> Compiler::compile(const std::string &source) {
+std::shared_ptr<ObjFunction> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
   compilingFunction_ = std::make_shared<ObjFunction>(0, nullptr);
   parser_->advance();
   while (!parser_->match(TokenType::END_OF_FILE)) {
     declaration(this);
   }
-  endCompiler();
-  return std::shared_ptr<Chunk>(compilingFunction_->chunk.release());
+  auto function = endCompiler();
+  if (parser_->hadError()) {
+    return nullptr;
+  }
+  return function;
 }
 
-void Compiler::endCompiler() {
+std::shared_ptr<ObjFunction> Compiler::endCompiler() {
   emitReturn();
 #ifdef DEBUG_PRINT_CODE
-  disassembleChunk(*currentChunk(), "code");
+  disassembleChunk(*currentChunk(), compilingFunction_->name != nullptr
+                                        ? compilingFunction_->name->str
+                                        : "<script>");
 #endif
+  return compilingFunction_;
 }
 
 void Compiler::emitByte(OpCode op) {

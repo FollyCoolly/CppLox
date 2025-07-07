@@ -56,7 +56,7 @@ private:
 
 struct ObjFunction : Obj {
   int arity;
-  std::unique_ptr<Chunk> chunk;
+  std::shared_ptr<Chunk> chunk;
   ObjString *name;
 
   ObjFunction(int arity, ObjString *name)
@@ -96,8 +96,11 @@ template <> struct std::formatter<Obj> {
       return std::format_to(ctx.out(), "{}",
                             static_cast<const ObjString &>(obj).str);
     case Obj::Type::FUNCTION:
-      return std::format_to(ctx.out(), "<fn {}>",
-                            static_cast<const ObjFunction &>(obj).name->str);
+      if (static_cast<const ObjFunction &>(obj).name != nullptr) {
+        return std::format_to(ctx.out(), "<fn {}>",
+                              static_cast<const ObjFunction &>(obj).name->str);
+      }
+      return std::format_to(ctx.out(), "<script>");
     }
     return ctx.out();
   }

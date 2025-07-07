@@ -22,6 +22,11 @@ enum class Precedence : uint8_t {
   PRIMARY
 };
 
+enum class FunctionType {
+  FUNCTION,
+  SCRIPT,
+};
+
 class Compiler;
 
 struct ParseRule {
@@ -38,8 +43,8 @@ struct Local {
 
 class Compiler {
 public:
-  std::shared_ptr<Chunk> compile(const std::string &source);
-  void endCompiler();
+  std::shared_ptr<ObjFunction> compile(const std::string &source);
+  std::shared_ptr<ObjFunction> endCompiler();
 
   Chunk *currentChunk() { return compilingFunction_->chunk.get(); }
 
@@ -96,6 +101,7 @@ public:
 
 private:
   std::shared_ptr<ObjFunction> compilingFunction_;
+  FunctionType currentFunctionType_ = FunctionType::SCRIPT;
   std::unique_ptr<Parser> parser_;
   std::vector<Local> locals_;
   int scopeDepth_ = 0;
