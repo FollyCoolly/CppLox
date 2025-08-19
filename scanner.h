@@ -59,6 +59,8 @@ struct Token {
   const char *start;
   int length;
   int line;
+
+  static Token emptyToken() { return Token{.start = "", .length = 0}; }
 };
 
 class Scanner {

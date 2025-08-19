@@ -18,8 +18,11 @@ bool identifiersEqual(const Token &a, const Token &b) {
 } // namespace
 
 std::shared_ptr<ObjFunction> Compiler::compile(const std::string &source) {
+  // initialization
   parser_ = std::make_unique<Parser>(source);
   compilingFunction_ = std::make_shared<ObjFunction>(0, nullptr);
+  locals_.push_back(Local{Token::emptyToken(), 0});
+
   parser_->advance();
   while (!parser_->match(TokenType::END_OF_FILE)) {
     declaration(this);
