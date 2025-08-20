@@ -41,12 +41,18 @@ struct Local {
   int depth;
 };
 
+struct compileContext {
+  std::shared_ptr<ObjFunction> function;
+  FunctionType functionType;
+  std::vector<Local> locals;
+};
+
 class Compiler {
 public:
   std::shared_ptr<ObjFunction> compile(const std::string &source);
   std::shared_ptr<ObjFunction> endCompiler();
 
-  Chunk *currentChunk() { return compilingFunction_->chunk.get(); }
+  Chunk *currentChunk() { return contexts_.back().function->chunk.get(); }
 
   void emitByte(OpCode op);
   void emitByte(uint8_t byte);
@@ -74,8 +80,11 @@ public:
   static void defineVariable(Compiler *compiler, uint8_t global);
   static void declareVariable(Compiler *compiler);
 
+  static void function(Compiler *compiler, FunctionType type);
+
   static void declaration(Compiler *compiler);
   static void varDeclaration(Compiler *compiler);
+  static void functionDeclaration(Compiler *compiler);
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
   static void ifStatement(Compiler *compiler);
@@ -100,9 +109,7 @@ public:
   static void endScope(Compiler *compiler);
 
 private:
-  std::shared_ptr<ObjFunction> compilingFunction_;
-  FunctionType currentFunctionType_ = FunctionType::SCRIPT;
+  std::vector<compileContext> contexts_;
   std::unique_ptr<Parser> parser_;
-  std::vector<Local> locals_;
   int scopeDepth_ = 0;
 };

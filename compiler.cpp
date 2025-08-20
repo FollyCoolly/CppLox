@@ -20,8 +20,9 @@ bool identifiersEqual(const Token &a, const Token &b) {
 std::shared_ptr<ObjFunction> Compiler::compile(const std::string &source) {
   // initialization
   parser_ = std::make_unique<Parser>(source);
-  compilingFunction_ = std::make_shared<ObjFunction>(0, nullptr);
-  locals_.push_back(Local{Token::emptyToken(), 0});
+  contexts_.push_back(
+      {std::make_shared<ObjFunction>(0, nullptr), FunctionType::SCRIPT, {}});
+  contexts_.back().locals.push_back(Local{Token::emptyToken(), 0});
 
   parser_->advance();
   while (!parser_->match(TokenType::END_OF_FILE)) {
@@ -37,11 +38,14 @@ std::shared_ptr<ObjFunction> Compiler::compile(const std::string &source) {
 std::shared_ptr<ObjFunction> Compiler::endCompiler() {
   emitReturn();
 #ifdef DEBUG_PRINT_CODE
-  disassembleChunk(*currentChunk(), compilingFunction_->name != nullptr
-                                        ? compilingFunction_->name->str
+  disassembleChunk(*currentChunk(), contexts_.back().function->name != nullptr
+                                        ? contexts_.back().function->name->str
                                         : "<script>");
 #endif
-  return compilingFunction_;
+
+  auto function = contexts_.back().function;
+  contexts_.pop_back();
+  return function;
 }
 
 void Compiler::emitByte(OpCode op) {
@@ -239,7 +243,9 @@ void Compiler::literal(Compiler *compiler, bool canAssign) {
 }
 
 void Compiler::declaration(Compiler *compiler) {
-  if (compiler->parser_->match(TokenType::VAR)) {
+  if (compiler->parser_->match(TokenType::FUN)) {
+    functionDeclaration(compiler);
+  } else if (compiler->parser_->match(TokenType::VAR)) {
     varDeclaration(compiler);
   } else {
     statement(compiler);
@@ -247,6 +253,13 @@ void Compiler::declaration(Compiler *compiler) {
   if (compiler->parser_->panicMode()) {
     synchronize(compiler);
   }
+}
+
+void Compiler::functionDeclaration(Compiler *compiler) {
+  auto global = parseVariable(compiler, "Expect function name.");
+  compiler->markInitialized();
+  function(compiler, FunctionType::FUNCTION);
+  defineVariable(compiler, global);
 }
 
 void Compiler::varDeclaration(Compiler *compiler) {
@@ -277,8 +290,8 @@ void Compiler::declareVariable(Compiler *compiler) {
   }
   const auto &name = compiler->parser_->previous();
   // check if the variable is already declared in this scope
-  for (int i = compiler->locals_.size() - 1; i >= 0; i--) {
-    auto &local = compiler->locals_[i];
+  for (int i = compiler->contexts_.back().locals.size() - 1; i >= 0; i--) {
+    auto &local = compiler->contexts_.back().locals[i];
     if (local.depth != -1 && local.depth < compiler->scopeDepth_) {
       break;
     }
@@ -304,14 +317,39 @@ void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
 }
 
 void Compiler::addLocal(const Token &name) {
-  if (locals_.size() == UINT8_MAX) {
+  if (contexts_.back().locals.size() == UINT8_MAX) {
     parser_->error("Too many local variables in function.");
     return;
   }
-  locals_.push_back({name, -1 /* set depth -1 to indicate not initialized */});
+  contexts_.back().locals.push_back(
+      {name, -1 /* set depth -1 to indicate not initialized */});
 }
 
-void Compiler::markInitialized() { locals_.back().depth = scopeDepth_; }
+void Compiler::markInitialized() {
+  if (scopeDepth_ == 0)
+    return;
+  contexts_.back().locals.back().depth = scopeDepth_;
+}
+
+void Compiler::function(Compiler *compiler, FunctionType type) {
+  compiler->contexts_.push_back(
+      {std::make_shared<ObjFunction>(0, nullptr), type, {}});
+  compiler->contexts_.back().locals.push_back(Local{Token::emptyToken(), 0});
+  compiler->beginScope(compiler);
+
+  compiler->parser_->consume(TokenType::LEFT_PAREN,
+                             "Expect '(' after function name.");
+  compiler->parser_->consume(TokenType::RIGHT_PAREN,
+                             "Expect ')' after parameters.");
+
+  compiler->parser_->consume(TokenType::LEFT_BRACE,
+                             "Expect '{' after parameters.");
+  block(compiler);
+
+  auto function = compiler->endCompiler();
+  compiler->emitBytes(OpCode::CONSTANT,
+                      compiler->makeConstant(Value::Object(function.get())));
+}
 
 void Compiler::statement(Compiler *compiler) {
   if (compiler->parser_->match(TokenType::PRINT)) {
@@ -507,8 +545,8 @@ void Compiler::variable(Compiler *compiler, bool canAssign) {
 }
 
 int Compiler::resolveLocal(const Token &name) {
-  for (int i = locals_.size() - 1; i >= 0; i--) {
-    auto &local = locals_[i];
+  for (int i = contexts_.back().locals.size() - 1; i >= 0; i--) {
+    auto &local = contexts_.back().locals[i];
     if (identifiersEqual(local.name, name)) {
       if (local.depth == -1) {
         parser_->error("Can't read local variable in its own initializer.");
@@ -554,9 +592,10 @@ void Compiler::beginScope(Compiler *compiler) { compiler->scopeDepth_++; }
 
 void Compiler::endScope(Compiler *compiler) {
   compiler->scopeDepth_--;
-  while (compiler->locals_.size() > 0 &&
-         compiler->locals_.back().depth > compiler->scopeDepth_) {
+  while (compiler->contexts_.back().locals.size() > 0 &&
+         compiler->contexts_.back().locals.back().depth >
+             compiler->scopeDepth_) {
     compiler->emitByte(OpCode::POP);
-    compiler->locals_.pop_back();
+    compiler->contexts_.back().locals.pop_back();
   }
 }
