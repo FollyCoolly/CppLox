@@ -5,27 +5,26 @@
 #include "object.h"
 #include <iostream>
 
-VM &VM::getInstance() {
-  static VM instance;
-  return instance;
-}
-
 InterpretResult VM::interpret(const std::string &source) {
   Compiler compiler;
   auto function = compiler.compile(source);
-  return getInstance().interpret(function->chunk);
-}
+  if (function == nullptr) {
+    return InterpretResult::InterpretCompileError;
+  }
 
-InterpretResult VM::interpret(std::shared_ptr<Chunk> chunk) {
-  chunk_ = std::move(chunk);
-  codeIdx_ = 0;
+  push(Value::Object(function.get()));
+  frames_.emplace_back(CallFrame{function, 0, stack_.data()});
+
   return run();
 }
 
 InterpretResult VM::run() {
-  auto readByte = [this]() -> uint8_t { return chunk_->code[codeIdx_++]; };
-  auto readConstant = [this, &readByte]() -> Value {
-    return chunk_->constants[readByte()];
+  auto &currentFrame = frames_.back();
+  auto readByte = [this, &currentFrame]() -> uint8_t {
+    return currentFrame.function->chunk->code[currentFrame.codeIdx++];
+  };
+  auto readConstant = [this, &readByte, &currentFrame]() -> Value {
+    return currentFrame.function->chunk->constants[readByte()];
   };
   auto readString = [this, &readConstant]() -> std::string {
     return obj_helpers::AsString(readConstant())->str;
@@ -43,7 +42,7 @@ InterpretResult VM::run() {
 
   while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
-    disassembleInstruction(*chunk_, codeIdx_);
+    disassembleInstruction(*currentFrame.function->chunk, currentFrame.codeIdx);
     printStack();
 #endif
     uint8_t instruction = readByte();
@@ -168,18 +167,18 @@ InterpretResult VM::run() {
     case OpCode::JUMP_IF_FALSE: {
       uint16_t offset = readByte() << 8 | readByte();
       if (isFalsey(peek(0))) {
-        codeIdx_ += offset;
+        currentFrame.codeIdx += offset;
       }
       break;
     }
     case OpCode::JUMP: {
       uint16_t offset = readByte() << 8 | readByte();
-      codeIdx_ += offset;
+      currentFrame.codeIdx += offset;
       break;
     }
     case OpCode::LOOP: {
       uint16_t offset = readByte() << 8 | readByte();
-      codeIdx_ -= offset;
+      currentFrame.codeIdx -= offset;
       break;
     }
     }
@@ -211,8 +210,9 @@ void VM::resetStack() { stack_.clear(); }
 void VM::runtimeError(const std::string &message) {
   std::cerr << message << std::endl;
 
-  size_t instruction = codeIdx_ - 1;
-  int line = chunk_->lines[instruction];
+  auto &currentFrame = frames_.back();
+  size_t instruction = currentFrame.codeIdx - 1;
+  int line = currentFrame.function->chunk->lines[instruction];
   std::cerr << "[line " << line << "] in script" << std::endl;
 
   resetStack();

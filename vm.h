@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chunk.h"
+#include "object.h"
 #include "value.h"
 #include <memory>
 #include <unordered_map>
@@ -12,22 +13,25 @@ enum class InterpretResult {
   InterpretRuntimeError,
 };
 
+struct CallFrame {
+  std::shared_ptr<ObjFunction> function;
+  int codeIdx;
+  Value *slots;
+};
+
 class VM {
 public:
-  static VM &getInstance();
-  static InterpretResult interpret(const std::string &source);
+  static constexpr int FRAMES_MAX = 64;
+  static constexpr int STACK_MAX =
+      FRAMES_MAX * 256; // 8 bits can represent 256 values
 
-  InterpretResult interpret(std::shared_ptr<Chunk> chunk);
+  InterpretResult interpret(const std::string &source);
 
 private:
   std::unordered_map<std::string, Value> globals_;
 
-  VM() = default;
-  ~VM() = default;
-
-  std::shared_ptr<Chunk> chunk_;
-  int codeIdx_;
   std::vector<Value> stack_;
+  std::vector<CallFrame> frames_;
 
   InterpretResult run();
 

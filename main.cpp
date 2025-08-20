@@ -16,7 +16,8 @@ void repl() {
       std::cout << std::endl;
       break;
     }
-    VM::interpret(line);
+    VM vm;
+    vm.interpret(line);
   }
 }
 
@@ -49,7 +50,8 @@ std::string readFile(const std::filesystem::path &path) {
 
 void runFile(const std::filesystem::path &path) {
   std::string source = readFile(path);
-  InterpretResult result = VM::interpret(source);
+  VM vm;
+  InterpretResult result = vm.interpret(source);
 
   if (result == InterpretResult::InterpretCompileError) {
     std::exit(65);
