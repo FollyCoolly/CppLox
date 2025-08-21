@@ -335,10 +335,29 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
   compiler->contexts_.push_back(
       {std::make_shared<ObjFunction>(0, nullptr), type, {}});
   compiler->contexts_.back().locals.push_back(Local{Token::emptyToken(), 0});
+  compiler->contexts_.back().function->name =
+      ObjString::getObject(compiler->parser_->previous().start,
+                           compiler->parser_->previous().length);
+
   compiler->beginScope(compiler);
 
   compiler->parser_->consume(TokenType::LEFT_PAREN,
                              "Expect '(' after function name.");
+
+  // parse parameters
+  if (!compiler->parser_->check(TokenType::RIGHT_PAREN)) {
+    do {
+      compiler->contexts_.back().function->arity++;
+      if (compiler->contexts_.back().function->arity > 255) {
+        compiler->parser_->error("Can't have more than 255 parameters.");
+        return;
+      }
+
+      uint8_t constant = parseVariable(compiler, "Expect parameter name.");
+      defineVariable(compiler, constant);
+    } while (compiler->parser_->match(TokenType::COMMA));
+  }
+
   compiler->parser_->consume(TokenType::RIGHT_PAREN,
                              "Expect ')' after parameters.");
 
