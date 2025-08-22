@@ -113,7 +113,7 @@ void Compiler::parsePrecedence(Compiler *compiler, Precedence precedence) {
 
 const ParseRule *Compiler::getRule(TokenType type) {
   static std::unordered_map<TokenType, ParseRule> rules = {
-      {TokenType::LEFT_PAREN, {Compiler::grouping, nullptr, Precedence::NONE}},
+      {TokenType::LEFT_PAREN, {Compiler::grouping, call, Precedence::NONE}},
       {TokenType::RIGHT_PAREN, {nullptr, nullptr, Precedence::NONE}},
       {TokenType::MINUS, {Compiler::unary, Compiler::binary, Precedence::TERM}},
       {TokenType::PLUS, {nullptr, Compiler::binary, Precedence::TERM}},
@@ -272,6 +272,28 @@ void Compiler::varDeclaration(Compiler *compiler) {
   }
   compiler->parser_->consume(TokenType::SEMICOLON, "Expect ';' after value.");
   defineVariable(compiler, global);
+}
+
+void Compiler::call(Compiler *compiler, bool canAssign) {
+  auto argCount = argumentList(compiler);
+  compiler->emitBytes(OpCode::CALL, argCount);
+}
+
+uint8_t Compiler::argumentList(Compiler *compiler) {
+  uint8_t argCount = 0;
+  if (!compiler->parser_->check(TokenType::RIGHT_PAREN)) {
+    do {
+      expression(compiler);
+      if (argCount == 255) {
+        compiler->parser_->error("Can't have more than 255 arguments.");
+        return 0;
+      }
+      argCount++;
+    } while (compiler->parser_->match(TokenType::COMMA));
+  }
+  compiler->parser_->consume(TokenType::RIGHT_PAREN,
+                             "Expect ')' after arguments.");
+  return argCount;
 }
 
 uint8_t Compiler::parseVariable(Compiler *compiler,

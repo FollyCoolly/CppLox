@@ -81,6 +81,8 @@ public:
   static void declareVariable(Compiler *compiler);
 
   static void function(Compiler *compiler, FunctionType type);
+  static void call(Compiler *compiler, bool canAssign);
+  static uint8_t argumentList(Compiler *compiler);
 
   static void declaration(Compiler *compiler);
   static void varDeclaration(Compiler *compiler);
