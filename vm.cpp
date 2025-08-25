@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "object.h"
 #include <iostream>
+#include <ranges>
 
 InterpretResult VM::interpret(const std::string &source) {
   Compiler compiler;
@@ -242,10 +243,14 @@ void VM::resetStack() { stack_.clear(); }
 void VM::runtimeError(const std::string &message) {
   std::cerr << message << std::endl;
 
-  auto &currentFrame = frames_.back();
-  size_t instruction = currentFrame.codeIdx - 1;
-  int line = currentFrame.function->chunk->lines[instruction];
-  std::cerr << "[line " << line << "] in script" << std::endl;
+  for (const auto &frame : std::views::reverse(frames_)) {
+    auto function = frame.function;
+    auto codeIdx = frame.codeIdx;
+    auto chunk = function->chunk;
+    auto line = chunk->lines[codeIdx];
+    auto name = function->name->str.empty() ? function->name->str : "script";
+    std::cerr << "[line " << line << "] in " << name << std::endl;
+  }
 
   resetStack();
 }
