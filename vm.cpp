@@ -13,7 +13,7 @@ InterpretResult VM::interpret(const std::string &source) {
   }
 
   push(Value::Object(function.get()));
-  frames_.emplace_back(CallFrame{function, 0, stack_.data()});
+  call(function.get(), 0);
 
   return run();
 }
@@ -181,9 +181,41 @@ InterpretResult VM::run() {
       currentFrame.codeIdx -= offset;
       break;
     }
+    case OpCode::CALL: {
+      uint8_t argCount = readByte();
+      if (!callValue(peek(argCount), argCount)) {
+        return InterpretResult::InterpretRuntimeError;
+      }
+      break;
+    }
     }
   }
 #undef BINARY_OP
+}
+
+bool VM::callValue(Value callee, uint8_t argCount) {
+  if (obj_helpers::IsObjType(callee, Obj::Type::FUNCTION)) {
+    return call(obj_helpers::AsFunction(callee), argCount);
+  }
+
+  runtimeError("Can only call functions.");
+  return false;
+}
+
+bool VM::call(ObjFunction *function, uint8_t argCount) {
+  if (argCount != function->arity) {
+    runtimeError("Expected " + std::to_string(function->arity) +
+                 " arguments but got " + std::to_string(argCount) + ".");
+    return false;
+  }
+
+  if (frames_.size() + 1 > FRAMES_MAX) {
+    runtimeError("Stack overflow.");
+    return false;
+  }
+
+  frames_.emplace_back(CallFrame{function, 0, stack_.size() - argCount - 1});
+  return true;
 }
 
 Value VM::pop() {

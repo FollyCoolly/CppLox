@@ -3,6 +3,7 @@
 #include "chunk.h"
 #include "object.h"
 #include "value.h"
+#include <cstddef>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -14,9 +15,9 @@ enum class InterpretResult {
 };
 
 struct CallFrame {
-  std::shared_ptr<ObjFunction> function;
+  ObjFunction *function;
   int codeIdx;
-  Value *slots;
+  size_t valueIdx;
 };
 
 class VM {
@@ -40,6 +41,8 @@ private:
   Value peek(int distance) const;
   void printStack();
   void resetStack();
+  bool callValue(Value callee, uint8_t argCount);
+  bool call(ObjFunction *function, uint8_t argCount);
 
   void runtimeError(const std::string &message);
 

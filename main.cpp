@@ -1,5 +1,3 @@
-#include "chunk.h"
-#include "debug.h"
 #include "vm.h"
 #include <cstdlib>
 #include <filesystem>
