@@ -49,8 +49,12 @@ InterpretResult VM::run() {
     uint8_t instruction = readByte();
     switch (from_uint8(instruction)) {
     case OpCode::RETURN: {
-      std::cout << pop() << std::endl;
-      return InterpretResult::InterpretOk;
+      frames_.pop_back();
+      if (frames_.empty()) {
+        pop();
+        return InterpretResult::InterpretOk;
+      }
+      break;
     }
     case OpCode::NEGATE: {
       if (!Value::IsNumber(peek(0))) {

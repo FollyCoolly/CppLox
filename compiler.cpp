@@ -66,7 +66,10 @@ void Compiler::emitBytes(OpCode op1, OpCode op2) {
   emitByte(op2);
 }
 
-void Compiler::emitReturn() { emitByte(OpCode::RETURN); }
+void Compiler::emitReturn() {
+  emitByte(OpCode::NIL);
+  emitByte(OpCode::RETURN);
+}
 
 void Compiler::emitConstant(Value value) {
   emitBytes(OpCode::CONSTANT, makeConstant(value));
