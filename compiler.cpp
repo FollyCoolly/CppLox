@@ -400,6 +400,8 @@ void Compiler::statement(Compiler *compiler) {
     printStatement(compiler);
   } else if (compiler->parser_->match(TokenType::IF)) {
     ifStatement(compiler);
+  } else if (compiler->parser_->match(TokenType::RETURN)) {
+    returnStatement(compiler);
   } else if (compiler->parser_->match(TokenType::WHILE)) {
     whileStatement(compiler);
   } else if (compiler->parser_->match(TokenType::FOR)) {
@@ -408,6 +410,21 @@ void Compiler::statement(Compiler *compiler) {
     block(compiler);
   } else {
     expressionStatement(compiler);
+  }
+}
+
+void Compiler::returnStatement(Compiler *compiler) {
+  if (compiler->contexts_.back().functionType == FunctionType::SCRIPT) {
+    compiler->parser_->error("Can't return from top-level code.");
+  }
+
+  if (compiler->parser_->match(TokenType::SEMICOLON)) {
+    compiler->emitReturn();
+  } else {
+    expression(compiler);
+    compiler->parser_->consume(TokenType::SEMICOLON,
+                               "Expect ';' after return value.");
+    compiler->emitByte(OpCode::RETURN);
   }
 }
 

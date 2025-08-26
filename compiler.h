@@ -90,6 +90,7 @@ public:
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
   static void ifStatement(Compiler *compiler);
+  static void returnStatement(Compiler *compiler);
   static void expressionStatement(Compiler *compiler);
   static void expression(Compiler *compiler);
   static void grouping(Compiler *compiler, bool canAssign);
