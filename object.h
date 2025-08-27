@@ -10,10 +10,13 @@
 #include <string_view>
 #include <unordered_map>
 
+using NativeFunction = Value (*)(int argCount, Value *args);
+
 struct Obj {
   enum class Type {
     STRING,
     FUNCTION,
+    NATIVE,
   };
 
   Type type;
@@ -64,6 +67,12 @@ struct ObjFunction : Obj {
         name(name) {}
 };
 
+struct ObjNative : Obj {
+  NativeFunction function;
+
+  ObjNative(NativeFunction function) : Obj{Type::NATIVE}, function(function) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT && value.as.obj->type == type;
@@ -71,6 +80,10 @@ inline bool IsObjType(const Value &value, Obj::Type type) {
 
 inline bool IsString(const Value &value) {
   return IsObjType(value, Obj::Type::STRING);
+}
+
+inline bool IsNative(const Value &value) {
+  return IsObjType(value, Obj::Type::NATIVE);
 }
 
 inline ObjString *AsString(const Value &value) {
@@ -81,8 +94,8 @@ inline ObjFunction *AsFunction(const Value &value) {
   return static_cast<ObjFunction *>(Value::AsObject(value));
 }
 
-inline ObjString *AsObjString(const Value &value) {
-  return static_cast<ObjString *>(Value::AsObject(value));
+inline ObjNative *AsNative(const Value &value) {
+  return static_cast<ObjNative *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
 
@@ -101,6 +114,8 @@ template <> struct std::formatter<Obj> {
                               static_cast<const ObjFunction &>(obj).name->str);
       }
       return std::format_to(ctx.out(), "<script>");
+    case Obj::Type::NATIVE:
+      return std::format_to(ctx.out(), "<native fn>");
     }
     return ctx.out();
   }
