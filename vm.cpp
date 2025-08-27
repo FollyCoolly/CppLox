@@ -6,6 +6,13 @@
 #include <iostream>
 #include <ranges>
 
+namespace {
+Value clockNative(int argCount, Value *args) {
+  return Value::Number(
+      std::chrono::system_clock::now().time_since_epoch().count());
+}
+} // namespace
+
 InterpretResult VM::interpret(const std::string &source) {
   Compiler compiler;
   auto function = compiler.compile(source);
@@ -270,4 +277,8 @@ void VM::runtimeError(const std::string &message) {
 
 bool VM::isFalsey(const Value &value) {
   return Value::IsNil(value) || (Value::IsBool(value) && !Value::AsBool(value));
+}
+
+void VM::defineNative(const std::string &name, NativeFunction function) {
+  globals_[name] = Value::Object(new ObjNative(function));
 }

@@ -45,6 +45,7 @@ private:
   bool call(ObjFunction *function, uint8_t argCount);
 
   void runtimeError(const std::string &message);
+  void defineNative(const std::string &name, NativeFunction function);
 
   static bool isFalsey(const Value &value);
 };
