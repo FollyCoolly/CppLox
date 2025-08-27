@@ -201,6 +201,15 @@ InterpretResult VM::run() {
 bool VM::callValue(Value callee, uint8_t argCount) {
   if (obj_helpers::IsObjType(callee, Obj::Type::FUNCTION)) {
     return call(obj_helpers::AsFunction(callee), argCount);
+  } else if (obj_helpers::IsNative(callee)) {
+    auto native = obj_helpers::AsNative(callee);
+    auto result =
+        native(argCount, stack_.data() + stack_.size() - argCount - 1);
+    for (int i = 0; i < argCount; i++) {
+      pop();
+    }
+    push(result);
+    return true;
   }
 
   runtimeError("Can only call functions.");

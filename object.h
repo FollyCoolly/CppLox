@@ -94,8 +94,8 @@ inline ObjFunction *AsFunction(const Value &value) {
   return static_cast<ObjFunction *>(Value::AsObject(value));
 }
 
-inline ObjNative *AsNative(const Value &value) {
-  return static_cast<ObjNative *>(Value::AsObject(value));
+inline NativeFunction AsNative(const Value &value) {
+  return static_cast<ObjNative *>(Value::AsObject(value))->function;
 }
 } // namespace obj_helpers
 
