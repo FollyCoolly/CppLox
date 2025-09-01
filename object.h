@@ -17,6 +17,7 @@ struct Obj {
     STRING,
     FUNCTION,
     NATIVE,
+    CLOSURE,
   };
 
   Type type;
@@ -73,6 +74,15 @@ struct ObjNative : Obj {
   ObjNative(NativeFunction function) : Obj{Type::NATIVE}, function(function) {}
 };
 
+struct ObjClosure : Obj {
+  std::shared_ptr<ObjFunction> function;
+  std::vector<Value> upvalues;
+
+  ObjClosure(std::shared_ptr<ObjFunction> function)
+      : Obj{Type::CLOSURE}, function(function),
+        upvalues(function->arity, Value::Nil()) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT && value.as.obj->type == type;
@@ -86,6 +96,10 @@ inline bool IsNative(const Value &value) {
   return IsObjType(value, Obj::Type::NATIVE);
 }
 
+inline bool IsClosure(const Value &value) {
+  return IsObjType(value, Obj::Type::CLOSURE);
+}
+
 inline ObjString *AsString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
@@ -96,6 +110,10 @@ inline ObjFunction *AsFunction(const Value &value) {
 
 inline NativeFunction AsNative(const Value &value) {
   return static_cast<ObjNative *>(Value::AsObject(value))->function;
+}
+
+inline ObjClosure *AsClosure(const Value &value) {
+  return static_cast<ObjClosure *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
 
@@ -116,6 +134,10 @@ template <> struct std::formatter<Obj> {
       return std::format_to(ctx.out(), "<script>");
     case Obj::Type::NATIVE:
       return std::format_to(ctx.out(), "<native fn>");
+    case Obj::Type::CLOSURE:
+      return std::format_to(
+          ctx.out(), "<closure {}>",
+          static_cast<const ObjClosure &>(obj).function->name->str);
     }
     return ctx.out();
   }
