@@ -391,7 +391,7 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
   block(compiler);
 
   auto function = compiler->endCompiler();
-  compiler->emitBytes(OpCode::CONSTANT,
+  compiler->emitBytes(OpCode::CLOSURE,
                       compiler->makeConstant(Value::Object(function.get())));
 }
 
