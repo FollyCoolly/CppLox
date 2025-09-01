@@ -20,8 +20,9 @@ InterpretResult VM::interpret(const std::string &source) {
     return InterpretResult::InterpretCompileError;
   }
 
-  push(Value::Object(function.get()));
-  call(function.get(), 0);
+  auto closure = std::make_shared<ObjClosure>(function.get());
+  push(Value::Object(closure.get()));
+  call(closure.get(), 0);
 
   return run();
 }
@@ -29,10 +30,10 @@ InterpretResult VM::interpret(const std::string &source) {
 InterpretResult VM::run() {
   auto &currentFrame = frames_.back();
   auto readByte = [this, &currentFrame]() -> uint8_t {
-    return currentFrame.function->chunk->code[currentFrame.codeIdx++];
+    return currentFrame.closure->function->chunk->code[currentFrame.codeIdx++];
   };
   auto readConstant = [this, &readByte, &currentFrame]() -> Value {
-    return currentFrame.function->chunk->constants[readByte()];
+    return currentFrame.closure->function->chunk->constants[readByte()];
   };
   auto readString = [this, &readConstant]() -> std::string {
     return obj_helpers::AsString(readConstant())->str;
@@ -50,7 +51,8 @@ InterpretResult VM::run() {
 
   while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
-    disassembleInstruction(*currentFrame.function->chunk, currentFrame.codeIdx);
+    disassembleInstruction(*currentFrame.closure->function->chunk,
+                           currentFrame.codeIdx);
     printStack();
 #endif
     uint8_t instruction = readByte();
@@ -200,14 +202,20 @@ InterpretResult VM::run() {
       }
       break;
     }
+    case OpCode::CLOSURE: {
+      auto function = obj_helpers::AsFunction(readConstant());
+      auto closure = std::make_shared<ObjClosure>(function);
+      push(Value::Object(closure.get()));
+      break;
+    }
     }
   }
 #undef BINARY_OP
 }
 
 bool VM::callValue(Value callee, uint8_t argCount) {
-  if (obj_helpers::IsObjType(callee, Obj::Type::FUNCTION)) {
-    return call(obj_helpers::AsFunction(callee), argCount);
+  if (obj_helpers::IsObjType(callee, Obj::Type::CLOSURE)) {
+    return call(obj_helpers::AsClosure(callee), argCount);
   } else if (obj_helpers::IsNative(callee)) {
     auto native = obj_helpers::AsNative(callee);
     auto result =
@@ -223,9 +231,9 @@ bool VM::callValue(Value callee, uint8_t argCount) {
   return false;
 }
 
-bool VM::call(ObjFunction *function, uint8_t argCount) {
-  if (argCount != function->arity) {
-    runtimeError("Expected " + std::to_string(function->arity) +
+bool VM::call(ObjClosure *closure, uint8_t argCount) {
+  if (argCount != closure->function->arity) {
+    runtimeError("Expected " + std::to_string(closure->function->arity) +
                  " arguments but got " + std::to_string(argCount) + ".");
     return false;
   }
@@ -235,7 +243,7 @@ bool VM::call(ObjFunction *function, uint8_t argCount) {
     return false;
   }
 
-  frames_.emplace_back(CallFrame{function, 0, stack_.size() - argCount - 1});
+  frames_.emplace_back(CallFrame{closure, 0, stack_.size() - argCount - 1});
   return true;
 }
 
@@ -264,7 +272,7 @@ void VM::runtimeError(const std::string &message) {
   std::cerr << message << std::endl;
 
   for (const auto &frame : std::views::reverse(frames_)) {
-    auto function = frame.function;
+    auto function = frame.closure->function;
     auto codeIdx = frame.codeIdx;
     auto chunk = function->chunk;
     auto line = chunk->lines[codeIdx];

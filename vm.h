@@ -15,7 +15,7 @@ enum class InterpretResult {
 };
 
 struct CallFrame {
-  ObjFunction *function;
+  ObjClosure *closure;
   int codeIdx;
   size_t valueIdx;
 };
@@ -42,7 +42,7 @@ private:
   void printStack();
   void resetStack();
   bool callValue(Value callee, uint8_t argCount);
-  bool call(ObjFunction *function, uint8_t argCount);
+  bool call(ObjClosure *closure, uint8_t argCount);
 
   void runtimeError(const std::string &message);
   void defineNative(const std::string &name, NativeFunction function);

@@ -75,10 +75,10 @@ struct ObjNative : Obj {
 };
 
 struct ObjClosure : Obj {
-  std::shared_ptr<ObjFunction> function;
+  ObjFunction *function;
   std::vector<Value> upvalues;
 
-  ObjClosure(std::shared_ptr<ObjFunction> function)
+  ObjClosure(ObjFunction *function)
       : Obj{Type::CLOSURE}, function(function),
         upvalues(function->arity, Value::Nil()) {}
 };
