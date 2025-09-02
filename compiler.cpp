@@ -627,6 +627,9 @@ void Compiler::namedVariable(Compiler *compiler, const Token &name,
   if (arg != -1) {
     getOp = OpCode::GET_LOCAL;
     setOp = OpCode::SET_LOCAL;
+  } else if ((arg = compiler->resolveUpvalue(name)) != -1) {
+    getOp = OpCode::GET_UPVALUE;
+    setOp = OpCode::SET_UPVALUE;
   } else {
     arg = compiler->identifierConstant(name);
     getOp = OpCode::GET_GLOBAL;
@@ -639,6 +642,45 @@ void Compiler::namedVariable(Compiler *compiler, const Token &name,
   } else {
     compiler->emitBytes(getOp, static_cast<uint8_t>(arg));
   }
+}
+
+int Compiler::resolveUpvalue(const Token &name) {
+  if (contexts_.size() <= 2) {
+    return -1;
+  }
+
+  int localIndex = -1;
+  auto &context = contexts_[contexts_.size() - 2];
+  for (int i = context.locals.size() - 1; i >= 0; i--) {
+    auto &local = context.locals[i];
+    if (identifiersEqual(local.name, name)) {
+      localIndex = i;
+      break;
+    }
+  }
+
+  if (localIndex != -1) {
+    return addUpvalue(localIndex, true);
+  }
+
+  return -1;
+}
+
+int Compiler::addUpvalue(uint8_t index, bool isLocal) {
+  auto &upvalues = contexts_.back().upvalues;
+  for (int i = 0; i < upvalues.size(); i++) {
+    if (upvalues[i].index == index && upvalues[i].isLocal == isLocal) {
+      return i;
+    }
+  }
+
+  if (upvalues.size() == UINT8_MAX) {
+    parser_->error("Too many upvalues in function.");
+    return 0;
+  }
+
+  upvalues.push_back({index, isLocal});
+  return upvalues.size() - 1;
 }
 
 void Compiler::block(Compiler *compiler) {

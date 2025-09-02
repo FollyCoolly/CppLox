@@ -4,6 +4,7 @@
 #include "object.h"
 #include "parser.h"
 #include "scanner.h"
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <sys/types.h>
@@ -41,10 +42,16 @@ struct Local {
   int depth;
 };
 
-struct compileContext {
+struct Upvalue {
+  uint8_t index;
+  bool isLocal;
+};
+
+struct CompileContext {
   std::shared_ptr<ObjFunction> function;
   FunctionType functionType;
   std::vector<Local> locals;
+  std::vector<Upvalue> upvalues;
 };
 
 class Compiler {
@@ -70,6 +77,9 @@ public:
   int resolveLocal(const Token &name);
   uint8_t identifierConstant(const Token &name);
   void markInitialized();
+
+  int resolveUpvalue(const Token &name);
+  int addUpvalue(uint8_t index, bool isLocal);
 
   static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
@@ -112,7 +122,7 @@ public:
   static void endScope(Compiler *compiler);
 
 private:
-  std::vector<compileContext> contexts_;
+  std::vector<CompileContext> contexts_;
   std::unique_ptr<Parser> parser_;
   int scopeDepth_ = 0;
 };
