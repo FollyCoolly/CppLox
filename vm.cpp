@@ -208,6 +208,10 @@ InterpretResult VM::run() {
       push(Value::Object(closure.get()));
       break;
     }
+    default: {
+      runtimeError("Unknown opcode: " + std::to_string(instruction));
+      return InterpretResult::InterpretRuntimeError;
+    }
     }
   }
 #undef BINARY_OP
