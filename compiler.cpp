@@ -605,9 +605,9 @@ void Compiler::variable(Compiler *compiler, bool canAssign) {
   namedVariable(compiler, compiler->parser_->previous(), canAssign);
 }
 
-int Compiler::resolveLocal(const Token &name) {
-  for (int i = contexts_.back().locals.size() - 1; i >= 0; i--) {
-    auto &local = contexts_.back().locals[i];
+int Compiler::resolveLocal(CompileContext &context, const Token &name) {
+  for (int i = context.locals.size() - 1; i >= 0; i--) {
+    auto &local = context.locals[i];
     if (identifiersEqual(local.name, name)) {
       if (local.depth == -1) {
         parser_->error("Can't read local variable in its own initializer.");
@@ -623,11 +623,12 @@ void Compiler::namedVariable(Compiler *compiler, const Token &name,
                              bool canAssign) {
 
   OpCode getOp, setOp;
-  int arg = compiler->resolveLocal(name);
+  int arg = compiler->resolveLocal(compiler->contexts_.back(), name);
   if (arg != -1) {
     getOp = OpCode::GET_LOCAL;
     setOp = OpCode::SET_LOCAL;
-  } else if ((arg = compiler->resolveUpvalue(name)) != -1) {
+  } else if ((arg = compiler->resolveUpvalue(compiler->contexts_.size() - 1,
+                                             name)) != -1) {
     getOp = OpCode::GET_UPVALUE;
     setOp = OpCode::SET_UPVALUE;
   } else {
@@ -644,30 +645,28 @@ void Compiler::namedVariable(Compiler *compiler, const Token &name,
   }
 }
 
-int Compiler::resolveUpvalue(const Token &name) {
-  if (contexts_.size() <= 2) {
+int Compiler::resolveUpvalue(int contextIdx, const Token &name) {
+  if (contextIdx <= 0) {
     return -1;
   }
 
-  int localIndex = -1;
-  auto &context = contexts_[contexts_.size() - 2];
-  for (int i = context.locals.size() - 1; i >= 0; i--) {
-    auto &local = context.locals[i];
-    if (identifiersEqual(local.name, name)) {
-      localIndex = i;
-      break;
-    }
+  auto &current_context = contexts_[contextIdx];
+
+  int localIndex = resolveLocal(contexts_[contextIdx - 1], name);
+  if (localIndex != -1) {
+    return addUpvalue(current_context, localIndex, true);
   }
 
-  if (localIndex != -1) {
-    return addUpvalue(localIndex, true);
+  int upvalueIndex = resolveUpvalue(contextIdx - 1, name);
+  if (upvalueIndex != -1) {
+    return addUpvalue(current_context, upvalueIndex, false);
   }
 
   return -1;
 }
 
-int Compiler::addUpvalue(uint8_t index, bool isLocal) {
-  auto &upvalues = contexts_.back().upvalues;
+int Compiler::addUpvalue(CompileContext &context, uint8_t index, bool isLocal) {
+  auto &upvalues = context.upvalues;
   for (int i = 0; i < upvalues.size(); i++) {
     if (upvalues[i].index == index && upvalues[i].isLocal == isLocal) {
       return i;

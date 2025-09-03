@@ -74,12 +74,12 @@ public:
   void emitLoop(int loopStart);
 
   void addLocal(const Token &name);
-  int resolveLocal(const Token &name);
   uint8_t identifierConstant(const Token &name);
   void markInitialized();
 
-  int resolveUpvalue(const Token &name);
-  int addUpvalue(uint8_t index, bool isLocal);
+  int resolveUpvalue(int contextIdx, const Token &name);
+  int resolveLocal(CompileContext &context, const Token &name);
+  int addUpvalue(CompileContext &context, uint8_t index, bool isLocal);
 
   static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
