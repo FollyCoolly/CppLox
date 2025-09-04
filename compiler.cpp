@@ -393,6 +393,11 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
   auto function = compiler->endCompiler();
   compiler->emitBytes(OpCode::CLOSURE,
                       compiler->makeConstant(Value::Object(function.get())));
+  const auto &upvalues = compiler->contexts_.back().upvalues;
+  for (int i = 0; i < upvalues.size(); i++) {
+    compiler->emitByte(upvalues[i].isLocal ? 1 : 0);
+    compiler->emitByte(upvalues[i].index);
+  }
 }
 
 void Compiler::statement(Compiler *compiler) {
@@ -678,6 +683,7 @@ int Compiler::addUpvalue(CompileContext &context, uint8_t index, bool isLocal) {
     return 0;
   }
 
+  context.function->upvalueCount++;
   upvalues.push_back({index, isLocal});
   return upvalues.size() - 1;
 }

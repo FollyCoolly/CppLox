@@ -60,12 +60,13 @@ private:
 
 struct ObjFunction : Obj {
   int arity;
+  int upvalueCount;
   std::shared_ptr<Chunk> chunk;
   ObjString *name;
 
   ObjFunction(int arity, ObjString *name)
-      : Obj{Type::FUNCTION}, arity(arity), chunk(std::make_unique<Chunk>()),
-        name(name) {}
+      : Obj{Type::FUNCTION}, arity(arity), upvalueCount(0),
+        chunk(std::make_unique<Chunk>()), name(name) {}
 };
 
 struct ObjNative : Obj {
@@ -75,12 +76,11 @@ struct ObjNative : Obj {
 };
 
 struct ObjClosure : Obj {
+  int upvalueCount;
   ObjFunction *function;
-  std::vector<Value> upvalues;
 
   ObjClosure(ObjFunction *function)
-      : Obj{Type::CLOSURE}, function(function),
-        upvalues(function->arity, Value::Nil()) {}
+      : Obj{Type::CLOSURE}, function(function), upvalueCount(0) {}
 };
 
 namespace obj_helpers {

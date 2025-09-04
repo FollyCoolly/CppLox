@@ -1,4 +1,5 @@
 #include "debug.h"
+#include "object.h"
 #include <format>
 #include <iostream>
 #include <string_view>
@@ -84,8 +85,22 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return jumpInstruction("OP_LOOP", chunk, -1, offset);
   case OpCode::CALL:
     return byteInstruction("OP_CALL", chunk, offset);
-  case OpCode::CLOSURE:
-    return constantInstruction("OP_CLOSURE", chunk, offset);
+  case OpCode::CLOSURE: {
+    offset++;
+    uint8_t constantIdx = chunk.code[offset++];
+    std::cout << std::format("{:<16} {:>4}\n", "OP_CLOSURE", constantIdx);
+    std::cout << chunk.constants[constantIdx] << std::endl;
+
+    auto function = obj_helpers::AsFunction(chunk.constants[constantIdx]);
+    for (int i = 0; i < function->upvalueCount; i++) {
+      int isLocal = chunk.code[offset++];
+      int index = chunk.code[offset++];
+      std::cout << std::format("{:04d}      |                     {} {}\n",
+                               offset, isLocal ? "local" : "upvalue", index);
+    }
+
+    return offset;
+  }
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;
