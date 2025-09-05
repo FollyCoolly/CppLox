@@ -14,6 +14,12 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
       os << "<script>";
     }
     break;
+  case Obj::Type::CLOSURE:
+    os << static_cast<const ObjClosure &>(obj);
+    break;
+  case Obj::Type::NATIVE:
+    os << "<native fn>";
+    break;
   }
   return os;
 }
