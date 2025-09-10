@@ -22,7 +22,7 @@ std::shared_ptr<ObjFunction> Compiler::compile(const std::string &source) {
   parser_ = std::make_unique<Parser>(source);
   contexts_.push_back(
       {std::make_shared<ObjFunction>(0, nullptr), FunctionType::SCRIPT, {}});
-  contexts_.back().locals.push_back(Local{Token::emptyToken(), 0});
+  contexts_.back().locals.push_back(Local{Token::emptyToken(), 0, false});
 
   parser_->advance();
   while (!parser_->match(TokenType::END_OF_FILE)) {
@@ -703,7 +703,11 @@ void Compiler::endScope(Compiler *compiler) {
   while (compiler->contexts_.back().locals.size() > 0 &&
          compiler->contexts_.back().locals.back().depth >
              compiler->scopeDepth_) {
-    compiler->emitByte(OpCode::POP);
-    compiler->contexts_.back().locals.pop_back();
+    if (compiler->contexts_.back().locals.back().isCaptured) {
+      compiler->emitByte(OpCode::CLOSE_UPVALUE);
+    } else {
+      compiler->emitByte(OpCode::POP);
+      compiler->contexts_.back().locals.pop_back();
+    }
   }
 }

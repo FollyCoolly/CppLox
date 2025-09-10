@@ -40,6 +40,7 @@ struct ParseRule {
 struct Local {
   Token name;
   int depth;
+  bool isCaptured;
 };
 
 struct Upvalue {
