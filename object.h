@@ -81,7 +81,8 @@ struct ObjClosure : Obj {
   ObjFunction *function;
 
   ObjClosure(ObjFunction *function)
-      : Obj{Type::CLOSURE}, function(function), upvalueCount(0) {}
+      : Obj{Type::CLOSURE}, function(function),
+        upvalueCount(function->upvalueCount) {}
 };
 
 struct ObjUpvalue : Obj {
