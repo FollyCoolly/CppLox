@@ -46,6 +46,7 @@ private:
 
   void runtimeError(const std::string &message);
   void defineNative(const std::string &name, NativeFunction function);
+  std::shared_ptr<ObjUpvalue> captureUpvalue(uint8_t index);
 
   static bool isFalsey(const Value &value);
 };

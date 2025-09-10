@@ -3,7 +3,9 @@
 #include "compiler.h"
 #include "debug.h"
 #include "object.h"
+#include <cstdint>
 #include <iostream>
+#include <memory>
 #include <ranges>
 
 namespace {
@@ -206,6 +208,26 @@ InterpretResult VM::run() {
       auto function = obj_helpers::AsFunction(readConstant());
       auto closure = std::make_shared<ObjClosure>(function);
       push(Value::Object(closure.get()));
+      for (int i = 0; i < closure->upvalueCount; i++) {
+        auto isLocal = readByte();
+        auto index = readByte();
+        if (isLocal) {
+          closure->upvalues[i] = captureUpvalue(index);
+        } else {
+          closure->upvalues[i] = currentFrame.closure->upvalues[index];
+        }
+      }
+
+      break;
+    }
+    case OpCode::GET_UPVALUE: {
+      uint8_t slot = readByte();
+      push(stack_[currentFrame.closure->upvalues[slot]->stackIdx]);
+      break;
+    }
+    case OpCode::SET_UPVALUE: {
+      uint8_t slot = readByte();
+      stack_[currentFrame.closure->upvalues[slot]->stackIdx] = peek(0);
       break;
     }
     default: {
@@ -215,6 +237,11 @@ InterpretResult VM::run() {
     }
   }
 #undef BINARY_OP
+}
+
+std::shared_ptr<ObjUpvalue> VM::captureUpvalue(uint8_t index) {
+  auto upvalue = std::make_shared<ObjUpvalue>(index);
+  return upvalue;
 }
 
 bool VM::callValue(Value callee, uint8_t argCount) {

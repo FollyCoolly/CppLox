@@ -76,22 +76,23 @@ struct ObjNative : Obj {
   ObjNative(NativeFunction function) : Obj{Type::NATIVE}, function(function) {}
 };
 
+struct ObjUpvalue : Obj {
+  Value closed;
+  ObjUpvalue *next;
+  int stackIdx;
+
+  ObjUpvalue(int stackIdx)
+      : Obj{Type::UPVALUE}, next(nullptr), stackIdx(stackIdx) {}
+};
+
 struct ObjClosure : Obj {
   int upvalueCount;
+  std::vector<std::shared_ptr<ObjUpvalue>> upvalues;
   ObjFunction *function;
 
   ObjClosure(ObjFunction *function)
       : Obj{Type::CLOSURE}, function(function),
-        upvalueCount(function->upvalueCount) {}
-};
-
-struct ObjUpvalue : Obj {
-  Value closed;
-  ObjUpvalue *next;
-  int index;
-
-  ObjUpvalue(Value closed, int index)
-      : Obj{Type::UPVALUE}, closed(closed), next(nullptr), index(index) {}
+        upvalueCount(function->upvalueCount), upvalues(upvalueCount) {}
 };
 
 namespace obj_helpers {
