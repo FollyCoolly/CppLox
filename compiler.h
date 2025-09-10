@@ -49,6 +49,7 @@ struct Upvalue {
 };
 
 struct CompileContext {
+  int scopeDepth;
   std::shared_ptr<ObjFunction> function;
   FunctionType functionType;
   std::vector<Local> locals;
@@ -125,5 +126,4 @@ public:
 private:
   std::vector<CompileContext> contexts_;
   std::unique_ptr<Parser> parser_;
-  int scopeDepth_ = 0;
 };

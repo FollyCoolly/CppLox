@@ -21,7 +21,7 @@ std::shared_ptr<ObjFunction> Compiler::compile(const std::string &source) {
   // initialization
   parser_ = std::make_unique<Parser>(source);
   contexts_.push_back(
-      {std::make_shared<ObjFunction>(0, nullptr), FunctionType::SCRIPT, {}});
+      {0, std::make_shared<ObjFunction>(0, nullptr), FunctionType::SCRIPT, {}});
   contexts_.back().locals.push_back(Local{Token::emptyToken(), 0, false});
 
   parser_->advance();
@@ -303,21 +303,22 @@ uint8_t Compiler::parseVariable(Compiler *compiler,
                                 const std::string &errorMessage) {
   compiler->parser_->consume(TokenType::IDENTIFIER, errorMessage);
   declareVariable(compiler);
-  if (compiler->scopeDepth_ > 0) {
+  if (compiler->contexts_.back().scopeDepth > 0) {
     return 0;
   }
   return compiler->identifierConstant(compiler->parser_->previous());
 }
 
 void Compiler::declareVariable(Compiler *compiler) {
-  if (compiler->scopeDepth_ == 0) {
+  if (compiler->contexts_.back().scopeDepth == 0) {
     return;
   }
   const auto &name = compiler->parser_->previous();
   // check if the variable is already declared in this scope
   for (int i = compiler->contexts_.back().locals.size() - 1; i >= 0; i--) {
     auto &local = compiler->contexts_.back().locals[i];
-    if (local.depth != -1 && local.depth < compiler->scopeDepth_) {
+    if (local.depth != -1 &&
+        local.depth < compiler->contexts_.back().scopeDepth) {
       break;
     }
     if (identifiersEqual(local.name, name)) {
@@ -334,7 +335,7 @@ uint8_t Compiler::identifierConstant(const Token &name) {
 }
 
 void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
-  if (compiler->scopeDepth_ > 0) {
+  if (compiler->contexts_.back().scopeDepth > 0) {
     compiler->markInitialized();
     return;
   }
@@ -351,14 +352,15 @@ void Compiler::addLocal(const Token &name) {
 }
 
 void Compiler::markInitialized() {
-  if (scopeDepth_ == 0)
+  auto &current_context = contexts_.back();
+  if (current_context.scopeDepth == 0)
     return;
-  contexts_.back().locals.back().depth = scopeDepth_;
+  contexts_.back().locals.back().depth = current_context.scopeDepth;
 }
 
 void Compiler::function(Compiler *compiler, FunctionType type) {
   compiler->contexts_.push_back(
-      {std::make_shared<ObjFunction>(0, nullptr), type, {}});
+      {0, std::make_shared<ObjFunction>(0, nullptr), type, {}});
   compiler->contexts_.back().locals.push_back(Local{Token::emptyToken(), 0});
   compiler->contexts_.back().function->name =
       ObjString::getObject(compiler->parser_->previous().start,
@@ -696,18 +698,20 @@ void Compiler::block(Compiler *compiler) {
   compiler->parser_->consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
 }
 
-void Compiler::beginScope(Compiler *compiler) { compiler->scopeDepth_++; }
+void Compiler::beginScope(Compiler *compiler) {
+  compiler->contexts_.back().scopeDepth++;
+}
 
 void Compiler::endScope(Compiler *compiler) {
-  compiler->scopeDepth_--;
-  while (compiler->contexts_.back().locals.size() > 0 &&
-         compiler->contexts_.back().locals.back().depth >
-             compiler->scopeDepth_) {
-    if (compiler->contexts_.back().locals.back().isCaptured) {
+  auto &current_context = compiler->contexts_.back();
+  current_context.scopeDepth--;
+  while (current_context.locals.size() > 0 &&
+         current_context.locals.back().depth > current_context.scopeDepth) {
+    if (current_context.locals.back().isCaptured) {
       compiler->emitByte(OpCode::CLOSE_UPVALUE);
     } else {
       compiler->emitByte(OpCode::POP);
-      compiler->contexts_.back().locals.pop_back();
+      current_context.locals.pop_back();
     }
   }
 }
