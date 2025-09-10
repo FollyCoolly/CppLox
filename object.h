@@ -78,11 +78,9 @@ struct ObjNative : Obj {
 
 struct ObjUpvalue : Obj {
   Value closed;
-  ObjUpvalue *next;
   int stackIdx;
 
-  ObjUpvalue(int stackIdx)
-      : Obj{Type::UPVALUE}, next(nullptr), stackIdx(stackIdx) {}
+  ObjUpvalue(int stackIdx) : Obj{Type::UPVALUE}, stackIdx(stackIdx) {}
 };
 
 struct ObjClosure : Obj {

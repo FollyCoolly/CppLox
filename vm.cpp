@@ -240,6 +240,18 @@ InterpretResult VM::run() {
 }
 
 std::shared_ptr<ObjUpvalue> VM::captureUpvalue(uint8_t index) {
+  auto prev_it = openUpvalues_.before_begin();
+  auto it = openUpvalues_.begin();
+
+  while (it != openUpvalues_.end() && (*it)->stackIdx > index) {
+    ++prev_it;
+    ++it;
+  }
+
+  if (it != openUpvalues_.end() && (*it)->stackIdx == index) {
+    return *it;
+  }
+
   auto upvalue = std::make_shared<ObjUpvalue>(index);
   return upvalue;
 }
@@ -297,7 +309,10 @@ void VM::printStack() {
   std::cout << std::endl;
 }
 
-void VM::resetStack() { stack_.clear(); }
+void VM::resetStack() {
+  stack_.clear();
+  openUpvalues_.clear();
+}
 
 void VM::runtimeError(const std::string &message) {
   std::cerr << message << std::endl;

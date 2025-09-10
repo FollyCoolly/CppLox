@@ -4,6 +4,7 @@
 #include "object.h"
 #include "value.h"
 #include <cstddef>
+#include <forward_list>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +34,7 @@ private:
 
   std::vector<Value> stack_;
   std::vector<CallFrame> frames_;
+  std::forward_list<std::shared_ptr<ObjUpvalue>> openUpvalues_;
 
   InterpretResult run();
 
