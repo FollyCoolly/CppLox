@@ -60,6 +60,7 @@ InterpretResult VM::run() {
     uint8_t instruction = readByte();
     switch (from_uint8(instruction)) {
     case OpCode::RETURN: {
+      closeUpvalues(frames_.back().valueIdx);
       frames_.pop_back();
       if (frames_.empty()) {
         pop();
@@ -230,6 +231,11 @@ InterpretResult VM::run() {
       stack_[currentFrame.closure->upvalues[slot]->stackIdx] = peek(0);
       break;
     }
+    case OpCode::CLOSE_UPVALUE: {
+      closeUpvalues(stack_.size() - 1);
+      pop();
+      break;
+    }
     default: {
       runtimeError("Unknown opcode: " + std::to_string(instruction));
       return InterpretResult::InterpretRuntimeError;
@@ -254,6 +260,15 @@ std::shared_ptr<ObjUpvalue> VM::captureUpvalue(uint8_t index) {
 
   auto upvalue = std::make_shared<ObjUpvalue>(index);
   return upvalue;
+}
+
+void VM::closeUpvalues(uint8_t index) {
+  while (!openUpvalues_.empty() && openUpvalues_.front()->stackIdx >= index) {
+    auto upvalue = openUpvalues_.front();
+    upvalue->closed = stack_[upvalue->stackIdx];
+    upvalue->stackIdx = -1;
+    openUpvalues_.pop_front();
+  }
 }
 
 bool VM::callValue(Value callee, uint8_t argCount) {
