@@ -20,6 +20,9 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
   case Obj::Type::NATIVE:
     os << "<native fn>";
     break;
+  case Obj::Type::UPVALUE:
+    os << "<upvalue>";
+    break;
   }
   return os;
 }

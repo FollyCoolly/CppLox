@@ -18,6 +18,7 @@ struct Obj {
     FUNCTION,
     NATIVE,
     CLOSURE,
+    UPVALUE,
   };
 
   Type type;
@@ -83,6 +84,15 @@ struct ObjClosure : Obj {
       : Obj{Type::CLOSURE}, function(function), upvalueCount(0) {}
 };
 
+struct ObjUpvalue : Obj {
+  Value closed;
+  ObjUpvalue *next;
+  int index;
+
+  ObjUpvalue(Value closed, int index)
+      : Obj{Type::UPVALUE}, closed(closed), next(nullptr), index(index) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT && value.as.obj->type == type;
@@ -100,6 +110,14 @@ inline bool IsClosure(const Value &value) {
   return IsObjType(value, Obj::Type::CLOSURE);
 }
 
+inline bool IsFunction(const Value &value) {
+  return IsObjType(value, Obj::Type::FUNCTION);
+}
+
+inline bool IsUpvalue(const Value &value) {
+  return IsObjType(value, Obj::Type::UPVALUE);
+}
+
 inline ObjString *AsString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
@@ -114,6 +132,10 @@ inline NativeFunction AsNative(const Value &value) {
 
 inline ObjClosure *AsClosure(const Value &value) {
   return static_cast<ObjClosure *>(Value::AsObject(value));
+}
+
+inline ObjUpvalue *AsUpvalue(const Value &value) {
+  return static_cast<ObjUpvalue *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
 
@@ -138,6 +160,8 @@ template <> struct std::formatter<Obj> {
       return std::format_to(
           ctx.out(), "<closure {}>",
           static_cast<const ObjClosure &>(obj).function->name->str);
+    case Obj::Type::UPVALUE:
+      return std::format_to(ctx.out(), "<upvalue>");
     }
     return ctx.out();
   }
