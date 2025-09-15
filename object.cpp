@@ -23,6 +23,9 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
   case Obj::Type::UPVALUE:
     os << "<upvalue>";
     break;
+  case Obj::Type::CLASS:
+    os << "<class>";
+    break;
   }
   return os;
 }

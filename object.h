@@ -19,6 +19,7 @@ struct Obj {
     NATIVE,
     CLOSURE,
     UPVALUE,
+    CLASS,
   };
 
   Type type;
@@ -93,6 +94,12 @@ struct ObjClosure : Obj {
         upvalueCount(function->upvalueCount), upvalues(upvalueCount) {}
 };
 
+struct ObjClass : Obj {
+  ObjString *name;
+
+  ObjClass(ObjString *name) : Obj{Type::CLASS}, name(name) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT && value.as.obj->type == type;
@@ -118,6 +125,10 @@ inline bool IsUpvalue(const Value &value) {
   return IsObjType(value, Obj::Type::UPVALUE);
 }
 
+inline bool IsClass(const Value &value) {
+  return IsObjType(value, Obj::Type::CLASS);
+}
+
 inline ObjString *AsString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
@@ -136,6 +147,10 @@ inline ObjClosure *AsClosure(const Value &value) {
 
 inline ObjUpvalue *AsUpvalue(const Value &value) {
   return static_cast<ObjUpvalue *>(Value::AsObject(value));
+}
+
+inline ObjClass *AsClass(const Value &value) {
+  return static_cast<ObjClass *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
 
@@ -162,6 +177,9 @@ template <> struct std::formatter<Obj> {
           static_cast<const ObjClosure &>(obj).function->name->str);
     case Obj::Type::UPVALUE:
       return std::format_to(ctx.out(), "<upvalue>");
+    case Obj::Type::CLASS:
+      return std::format_to(ctx.out(), "<class {}>",
+                            static_cast<const ObjClass &>(obj).name->str);
     }
     return ctx.out();
   }
