@@ -102,7 +102,8 @@ struct ObjClass : Obj {
 
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
-  return value.type == Value::Type::OBJECT && value.as.obj->type == type;
+  return value.type == Value::Type::OBJECT &&
+         std::get<Obj *>(value.data)->type == type;
 }
 
 inline bool IsString(const Value &value) {

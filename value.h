@@ -3,6 +3,7 @@
 #include "common.h"
 #include <format>
 #include <iostream>
+#include <variant>
 
 struct Obj;
 struct ObjString;
@@ -16,28 +17,42 @@ struct Value {
   };
 
   Type type;
-  union {
-    bool boolean;
-    double number;
-    Obj *obj;
-  } as;
+  std::variant<bool, std::monostate, double, Obj *> data;
 
   bool operator==(const Value &other) const;
 
   static Value Bool(bool value) {
-    return Value(Type::BOOL, {.boolean = value});
+    Value v;
+    v.type = Type::BOOL;
+    v.data = value;
+    return v;
   }
-  static Value Nil() { return Value(Type::NIL, {.number = 0}); }
+  static Value Nil() {
+    Value v;
+    v.type = Type::NIL;
+    v.data = std::monostate{};
+    return v;
+  }
   static Value Number(double value) {
-    return Value(Type::NUMBER, {.number = value});
+    Value v;
+    v.type = Type::NUMBER;
+    v.data = value;
+    return v;
   }
   static Value Object(Obj *value) {
-    return Value(Type::OBJECT, {.obj = value});
+    Value v;
+    v.type = Type::OBJECT;
+    v.data = value;
+    return v;
   }
 
-  static bool AsBool(const Value &value) { return value.as.boolean; }
-  static double AsNumber(const Value &value) { return value.as.number; }
-  static Obj *AsObject(const Value &value) { return value.as.obj; }
+  static bool AsBool(const Value &value) { return std::get<bool>(value.data); }
+  static double AsNumber(const Value &value) {
+    return std::get<double>(value.data);
+  }
+  static Obj *AsObject(const Value &value) {
+    return std::get<Obj *>(value.data);
+  }
 
   static bool IsBool(const Value &value) { return value.type == Type::BOOL; }
   static bool IsNil(const Value &value) { return value.type == Type::NIL; }
@@ -58,11 +73,11 @@ template <> struct std::formatter<Value> {
     switch (value.type) {
     case Value::Type::BOOL:
       return std::format_to(ctx.out(), "{}",
-                            value.as.boolean ? "true" : "false");
+                            std::get<bool>(value.data) ? "true" : "false");
     case Value::Type::NIL:
       return std::format_to(ctx.out(), "nil");
     case Value::Type::NUMBER:
-      return std::format_to(ctx.out(), "{}", value.as.number);
+      return std::format_to(ctx.out(), "{}", std::get<double>(value.data));
     case Value::Type::OBJECT:
       return std::format_to(ctx.out(), "<object>");
     }
