@@ -382,7 +382,8 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
   compiler->contexts_.back().locals.push_back(Local{Token::emptyToken(), 0});
   compiler->contexts_.back().function->name =
       ObjString::getObject(compiler->parser_->previous().start,
-                           compiler->parser_->previous().length);
+                           compiler->parser_->previous().length)
+          .get();
 
   compiler->beginScope(compiler);
 
@@ -412,7 +413,7 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
 
   auto function = compiler->endCompiler();
   compiler->emitBytes(OpCode::CLOSURE,
-                      compiler->makeConstant(Value::Object(function.get())));
+                      compiler->makeConstant(Value::Object(function)));
   const auto &upvalues = compiler->contexts_.back().upvalues;
   for (int i = 0; i < upvalues.size(); i++) {
     compiler->emitByte(upvalues[i].isLocal ? 1 : 0);

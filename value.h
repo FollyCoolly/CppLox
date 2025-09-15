@@ -3,6 +3,7 @@
 #include "common.h"
 #include <format>
 #include <iostream>
+#include <memory>
 #include <variant>
 
 struct Obj;
@@ -17,7 +18,7 @@ struct Value {
   };
 
   Type type;
-  std::variant<bool, std::monostate, double, Obj *> data;
+  std::variant<bool, std::monostate, double, std::shared_ptr<Obj>> data;
 
   bool operator==(const Value &other) const;
 
@@ -39,7 +40,7 @@ struct Value {
     v.data = value;
     return v;
   }
-  static Value Object(Obj *value) {
+  static Value Object(std::shared_ptr<Obj> value) {
     Value v;
     v.type = Type::OBJECT;
     v.data = value;
@@ -51,7 +52,7 @@ struct Value {
     return std::get<double>(value.data);
   }
   static Obj *AsObject(const Value &value) {
-    return std::get<Obj *>(value.data);
+    return std::get<std::shared_ptr<Obj>>(value.data).get();
   }
 
   static bool IsBool(const Value &value) { return value.type == Type::BOOL; }

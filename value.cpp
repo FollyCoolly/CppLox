@@ -1,6 +1,5 @@
 #include "value.h"
 #include "object.h"
-#include <format>
 #include <iostream>
 
 std::ostream &operator<<(std::ostream &os, const Value &value) {

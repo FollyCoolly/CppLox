@@ -23,7 +23,7 @@ InterpretResult VM::interpret(const std::string &source) {
   }
 
   auto closure = std::make_shared<ObjClosure>(function.get());
-  push(Value::Object(closure.get()));
+  push(Value::Object(closure));
   call(closure.get(), 0);
 
   return run();
@@ -208,7 +208,7 @@ InterpretResult VM::run() {
     case OpCode::CLOSURE: {
       auto function = obj_helpers::AsFunction(readConstant());
       auto closure = std::make_shared<ObjClosure>(function);
-      push(Value::Object(closure.get()));
+      push(Value::Object(closure));
       for (int i = 0; i < closure->upvalueCount; i++) {
         auto isLocal = readByte();
         auto index = readByte();
@@ -237,7 +237,8 @@ InterpretResult VM::run() {
       break;
     }
     case OpCode::CLASS: {
-      push(Value::Object(new ObjClass(obj_helpers::AsString(readConstant()))));
+      push(Value::Object(
+          std::make_shared<ObjClass>(obj_helpers::AsString(readConstant()))));
       break;
     }
     default: {
@@ -353,5 +354,5 @@ bool VM::isFalsey(const Value &value) {
 }
 
 void VM::defineNative(const std::string &name, NativeFunction function) {
-  globals_[name] = Value::Object(new ObjNative(function));
+  globals_[name] = Value::Object(std::make_shared<ObjNative>(function));
 }

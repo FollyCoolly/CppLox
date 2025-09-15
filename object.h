@@ -28,27 +28,26 @@ struct Obj {
 struct ObjString : Obj {
   std::string str;
 
-  static ObjString *getObject(const char *chars, int length) {
-    static std::unordered_map<std::string_view, std::unique_ptr<ObjString>>
+  static std::shared_ptr<ObjString> getObject(const char *chars, int length) {
+    static std::unordered_map<std::string_view, std::shared_ptr<ObjString>>
         interned_strings;
     static std::vector<std::string> string_storage;
 
     std::string_view key(chars, length);
     auto it = interned_strings.find(key);
     if (it != interned_strings.end()) {
-      return it->second.get();
+      return it->second;
     }
 
     string_storage.emplace_back(chars, length);
     key = string_storage.back();
 
-    auto obj = std::make_unique<ObjString>(key);
-    ObjString *result = obj.get();
-    interned_strings[key] = std::move(obj);
-    return result;
+    auto obj = std::make_shared<ObjString>(key);
+    interned_strings[key] = obj;
+    return obj;
   }
 
-  static ObjString *getObject(const std::string &str) {
+  static std::shared_ptr<ObjString> getObject(const std::string &str) {
     return getObject(str.c_str(), str.length());
   }
 
@@ -103,7 +102,7 @@ struct ObjClass : Obj {
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT &&
-         std::get<Obj *>(value.data)->type == type;
+         std::get<std::shared_ptr<Obj>>(value.data)->type == type;
 }
 
 inline bool IsString(const Value &value) {
