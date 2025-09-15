@@ -246,7 +246,9 @@ void Compiler::literal(Compiler *compiler, bool canAssign) {
 }
 
 void Compiler::declaration(Compiler *compiler) {
-  if (compiler->parser_->match(TokenType::FUN)) {
+  if (compiler->parser_->match(TokenType::CLASS)) {
+    classDeclaration(compiler);
+  } else if (compiler->parser_->match(TokenType::FUN)) {
     functionDeclaration(compiler);
   } else if (compiler->parser_->match(TokenType::VAR)) {
     varDeclaration(compiler);
@@ -256,6 +258,22 @@ void Compiler::declaration(Compiler *compiler) {
   if (compiler->parser_->panicMode()) {
     synchronize(compiler);
   }
+}
+
+void Compiler::classDeclaration(Compiler *compiler) {
+  compiler->parser_->consume(TokenType::IDENTIFIER, "Expect class name.");
+  auto nameConstant =
+      compiler->identifierConstant(compiler->parser_->previous());
+
+  declareVariable(compiler);
+  compiler->emitBytes(OpCode::CLASS, nameConstant);
+  defineVariable(compiler, nameConstant);
+
+  compiler->parser_->consume(TokenType::LEFT_BRACE,
+                             "Expect '{' before class body.");
+
+  compiler->parser_->consume(TokenType::RIGHT_BRACE,
+                             "Expect '}' after class body.");
 }
 
 void Compiler::functionDeclaration(Compiler *compiler) {

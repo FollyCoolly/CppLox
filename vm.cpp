@@ -236,6 +236,10 @@ InterpretResult VM::run() {
       pop();
       break;
     }
+    case OpCode::CLASS: {
+      push(Value::Object(new ObjClass(obj_helpers::AsString(readConstant()))));
+      break;
+    }
     default: {
       runtimeError("Unknown opcode: " + std::to_string(instruction));
       return InterpretResult::InterpretRuntimeError;

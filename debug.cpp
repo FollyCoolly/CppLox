@@ -1,4 +1,5 @@
 #include "debug.h"
+#include "chunk.h"
 #include "object.h"
 #include <format>
 #include <iostream>
@@ -107,6 +108,8 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return byteInstruction("OP_GET_UPVALUE", chunk, offset);
   case OpCode::SET_UPVALUE:
     return byteInstruction("OP_SET_UPVALUE", chunk, offset);
+  case OpCode::CLASS:
+    return constantInstruction("OP_CLASS", chunk, offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;
