@@ -288,6 +288,11 @@ bool VM::callValue(Value callee, uint8_t argCount) {
     }
     push(result);
     return true;
+  } else if (obj_helpers::IsClass(callee)) {
+    auto klass = obj_helpers::AsClass(callee);
+    stack_[stack_.size() - argCount - 1] =
+        Value::Object(std::make_shared<ObjInstance>(klass));
+    return true;
   }
 
   runtimeError("Can only call functions.");

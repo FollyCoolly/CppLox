@@ -26,6 +26,9 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
   case Obj::Type::CLASS:
     os << "<class>";
     break;
+  case Obj::Type::INSTANCE:
+    os << "<instance>";
+    break;
   }
   return os;
 }

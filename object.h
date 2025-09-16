@@ -20,6 +20,7 @@ struct Obj {
     CLOSURE,
     UPVALUE,
     CLASS,
+    INSTANCE,
   };
 
   Type type;
@@ -99,6 +100,13 @@ struct ObjClass : Obj {
   ObjClass(ObjString *name) : Obj{Type::CLASS}, name(name) {}
 };
 
+struct ObjInstance : Obj {
+  ObjClass *klass;
+  std::unordered_map<std::string, Value> fields;
+
+  ObjInstance(ObjClass *klass) : Obj{Type::INSTANCE}, klass(klass) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT &&
@@ -129,6 +137,10 @@ inline bool IsClass(const Value &value) {
   return IsObjType(value, Obj::Type::CLASS);
 }
 
+inline bool IsInstance(const Value &value) {
+  return IsObjType(value, Obj::Type::INSTANCE);
+}
+
 inline ObjString *AsString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
@@ -151,6 +163,10 @@ inline ObjUpvalue *AsUpvalue(const Value &value) {
 
 inline ObjClass *AsClass(const Value &value) {
   return static_cast<ObjClass *>(Value::AsObject(value));
+}
+
+inline ObjInstance *AsInstance(const Value &value) {
+  return static_cast<ObjInstance *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
 
@@ -180,6 +196,10 @@ template <> struct std::formatter<Obj> {
     case Obj::Type::CLASS:
       return std::format_to(ctx.out(), "<class {}>",
                             static_cast<const ObjClass &>(obj).name->str);
+    case Obj::Type::INSTANCE:
+      return std::format_to(
+          ctx.out(), "<{} instance>",
+          static_cast<const ObjInstance &>(obj).klass->name->str);
     }
     return ctx.out();
   }
