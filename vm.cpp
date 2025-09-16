@@ -4,6 +4,7 @@
 #include "debug.h"
 #include "object.h"
 #include <cstdint>
+#include <format>
 #include <iostream>
 #include <memory>
 #include <ranges>
@@ -239,6 +240,35 @@ InterpretResult VM::run() {
     case OpCode::CLASS: {
       push(Value::Object(
           std::make_shared<ObjClass>(obj_helpers::AsString(readConstant()))));
+      break;
+    }
+    case OpCode::GET_PROPERTY: {
+      if (!obj_helpers::IsInstance(peek(0))) {
+        runtimeError("Only instances have properties.");
+        return InterpretResult::InterpretRuntimeError;
+      }
+
+      auto instance = obj_helpers::AsInstance(peek(0));
+      auto name = readString();
+      if (instance->fields.contains(name)) {
+        pop();
+        push(instance->fields[name]);
+        break;
+      }
+
+      runtimeError(std::format("Undefined property '{}'.", name));
+      return InterpretResult::InterpretRuntimeError;
+    }
+    case OpCode::SET_PROPERTY: {
+      if (!obj_helpers::IsInstance(peek(1))) {
+        runtimeError("Only instances have properties.");
+        return InterpretResult::InterpretRuntimeError;
+      }
+      auto instance = obj_helpers::AsInstance(peek(1));
+      instance->fields[readString()] = peek(0);
+      auto property = pop();
+      pop();
+      push(property);
       break;
     }
     default: {

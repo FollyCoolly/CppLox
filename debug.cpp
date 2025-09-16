@@ -110,6 +110,10 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return byteInstruction("OP_SET_UPVALUE", chunk, offset);
   case OpCode::CLASS:
     return constantInstruction("OP_CLASS", chunk, offset);
+  case OpCode::GET_PROPERTY:
+    return constantInstruction("OP_GET_PROPERTY", chunk, offset);
+  case OpCode::SET_PROPERTY:
+    return constantInstruction("OP_SET_PROPERTY", chunk, offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;

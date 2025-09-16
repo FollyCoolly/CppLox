@@ -142,6 +142,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::IDENTIFIER, {Compiler::variable, nullptr, Precedence::NONE}},
       {TokenType::AND, {Compiler::logicalAnd, nullptr, Precedence::AND}},
       {TokenType::OR, {Compiler::logicalOr, nullptr, Precedence::OR}},
+      {TokenType::DOT, {nullptr, Compiler::dot, Precedence::CALL}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
@@ -152,6 +153,20 @@ const ParseRule *Compiler::getRule(TokenType type) {
 
 void Compiler::expression(Compiler *compiler) {
   parsePrecedence(compiler, Precedence::ASSIGNMENT);
+}
+
+void Compiler::dot(Compiler *compiler, bool canAssign) {
+  compiler->parser_->consume(TokenType::IDENTIFIER,
+                             "Expect property name after '.'.");
+  auto nameConstant =
+      compiler->identifierConstant(compiler->parser_->previous());
+
+  if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
+    expression(compiler);
+    compiler->emitBytes(OpCode::GET_PROPERTY, nameConstant);
+  } else {
+    compiler->emitBytes(OpCode::GET_PROPERTY, nameConstant);
+  }
 }
 
 void Compiler::grouping(Compiler *compiler, bool canAssign) {

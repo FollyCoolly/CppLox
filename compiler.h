@@ -107,6 +107,7 @@ public:
   static void returnStatement(Compiler *compiler);
   static void expressionStatement(Compiler *compiler);
   static void expression(Compiler *compiler);
+  static void dot(Compiler *compiler, bool canAssign);
   static void grouping(Compiler *compiler, bool canAssign);
   static void unary(Compiler *compiler, bool canAssign);
   static void binary(Compiler *compiler, bool canAssign);
