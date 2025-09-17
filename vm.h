@@ -17,8 +17,8 @@ enum class InterpretResult {
 
 struct CallFrame {
   ObjClosure *closure;
-  int codeIdx;
-  size_t valueIdx;
+  int code_idx;
+  size_t value_idx;
 };
 
 class VM {
@@ -43,13 +43,13 @@ private:
   Value peek(int distance) const;
   void printStack();
   void resetStack();
-  bool callValue(Value callee, uint8_t argCount);
-  bool call(ObjClosure *closure, uint8_t argCount);
+  bool callValue(Value callee, uint8_t arg_count);
+  bool call(ObjClosure *closure, uint8_t arg_count);
 
   void runtimeError(const std::string &message);
   void defineNative(const std::string &name, NativeFunction function);
   std::shared_ptr<ObjUpvalue> captureUpvalue(uint8_t index);
-  void closeUpvalues(uint8_t lastIdx);
+  void closeUpvalues(uint8_t last_idx);
 
   static bool isFalsey(const Value &value);
 };

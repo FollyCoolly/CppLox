@@ -10,7 +10,7 @@
 #include <ranges>
 
 namespace {
-Value clockNative(int argCount, Value *args) {
+Value clockNative(int arg_count, Value *args) {
   return Value::Number(
       std::chrono::system_clock::now().time_since_epoch().count());
 }
@@ -31,15 +31,16 @@ InterpretResult VM::interpret(const std::string &source) {
 }
 
 InterpretResult VM::run() {
-  auto &currentFrame = frames_.back();
-  auto readByte = [this, &currentFrame]() -> uint8_t {
-    return currentFrame.closure->function->chunk->code[currentFrame.codeIdx++];
+  auto &current_frame = frames_.back();
+  auto read_byte = [this, &current_frame]() -> uint8_t {
+    return current_frame.closure->function->chunk
+        ->code[current_frame.code_idx++];
   };
-  auto readConstant = [this, &readByte, &currentFrame]() -> Value {
-    return currentFrame.closure->function->chunk->constants[readByte()];
+  auto read_constant = [this, &read_byte, &current_frame]() -> Value {
+    return current_frame.closure->function->chunk->constants[read_byte()];
   };
-  auto readString = [this, &readConstant]() -> std::string {
-    return obj_helpers::AsString(readConstant())->str;
+  auto read_string = [this, &read_constant]() -> std::string {
+    return obj_helpers::AsString(read_constant())->str;
   };
 #define BINARY_OP(valueType, op)                                               \
   do {                                                                         \
@@ -54,14 +55,14 @@ InterpretResult VM::run() {
 
   while (true) {
 #ifdef DEBUG_TRACE_EXECUTION
-    disassembleInstruction(*currentFrame.closure->function->chunk,
-                           currentFrame.codeIdx);
+    disassembleInstruction(*current_frame.closure->function->chunk,
+                           current_frame.code_idx);
     printStack();
 #endif
-    uint8_t instruction = readByte();
+    uint8_t instruction = read_byte();
     switch (from_uint8(instruction)) {
     case OpCode::RETURN: {
-      closeUpvalues(frames_.back().valueIdx);
+      closeUpvalues(frames_.back().value_idx);
       frames_.pop_back();
       if (frames_.empty()) {
         pop();
@@ -121,7 +122,7 @@ InterpretResult VM::run() {
       break;
     }
     case OpCode::CONSTANT: {
-      Value constant = readConstant();
+      Value constant = read_constant();
       push(constant);
       break;
     }
@@ -148,12 +149,12 @@ InterpretResult VM::run() {
       break;
     }
     case OpCode::DEFINE_GLOBAL: {
-      std::string name = readString();
+      std::string name = read_string();
       globals_[name] = pop();
       break;
     }
     case OpCode::GET_GLOBAL: {
-      std::string name = readString();
+      std::string name = read_string();
       auto it = globals_.find(name);
       if (it == globals_.end()) {
         runtimeError("Undefined variable '" + name + "'.");
@@ -163,7 +164,7 @@ InterpretResult VM::run() {
       break;
     }
     case OpCode::SET_GLOBAL: {
-      std::string name = readString();
+      std::string name = read_string();
       auto it = globals_.find(name);
       if (it == globals_.end()) {
         runtimeError("Undefined variable '" + name + "'.");
@@ -173,63 +174,63 @@ InterpretResult VM::run() {
       break;
     }
     case OpCode::GET_LOCAL: {
-      uint8_t slot = readByte();
+      uint8_t slot = read_byte();
       push(stack_[slot]);
       break;
     }
     case OpCode::SET_LOCAL: {
-      uint8_t slot = readByte();
+      uint8_t slot = read_byte();
       stack_[slot] = peek(0);
       break;
     }
     case OpCode::JUMP_IF_FALSE: {
-      uint16_t offset = readByte() << 8 | readByte();
+      uint16_t offset = read_byte() << 8 | read_byte();
       if (isFalsey(peek(0))) {
-        currentFrame.codeIdx += offset;
+        current_frame.code_idx += offset;
       }
       break;
     }
     case OpCode::JUMP: {
-      uint16_t offset = readByte() << 8 | readByte();
-      currentFrame.codeIdx += offset;
+      uint16_t offset = read_byte() << 8 | read_byte();
+      current_frame.code_idx += offset;
       break;
     }
     case OpCode::LOOP: {
-      uint16_t offset = readByte() << 8 | readByte();
-      currentFrame.codeIdx -= offset;
+      uint16_t offset = read_byte() << 8 | read_byte();
+      current_frame.code_idx -= offset;
       break;
     }
     case OpCode::CALL: {
-      uint8_t argCount = readByte();
-      if (!callValue(peek(argCount), argCount)) {
+      uint8_t arg_count = read_byte();
+      if (!callValue(peek(arg_count), arg_count)) {
         return InterpretResult::InterpretRuntimeError;
       }
       break;
     }
     case OpCode::CLOSURE: {
-      auto function = obj_helpers::AsFunction(readConstant());
+      auto function = obj_helpers::AsFunction(read_constant());
       auto closure = std::make_shared<ObjClosure>(function);
       push(Value::Object(closure));
-      for (int i = 0; i < closure->upvalueCount; i++) {
-        auto isLocal = readByte();
-        auto index = readByte();
+      for (int i = 0; i < closure->upvalue_count; i++) {
+        auto isLocal = read_byte();
+        auto index = read_byte();
         if (isLocal) {
           closure->upvalues[i] = captureUpvalue(index);
         } else {
-          closure->upvalues[i] = currentFrame.closure->upvalues[index];
+          closure->upvalues[i] = current_frame.closure->upvalues[index];
         }
       }
 
       break;
     }
     case OpCode::GET_UPVALUE: {
-      uint8_t slot = readByte();
-      push(stack_[currentFrame.closure->upvalues[slot]->stackIdx]);
+      uint8_t slot = read_byte();
+      push(stack_[current_frame.closure->upvalues[slot]->stack_idx]);
       break;
     }
     case OpCode::SET_UPVALUE: {
-      uint8_t slot = readByte();
-      stack_[currentFrame.closure->upvalues[slot]->stackIdx] = peek(0);
+      uint8_t slot = read_byte();
+      stack_[current_frame.closure->upvalues[slot]->stack_idx] = peek(0);
       break;
     }
     case OpCode::CLOSE_UPVALUE: {
@@ -239,7 +240,7 @@ InterpretResult VM::run() {
     }
     case OpCode::CLASS: {
       push(Value::Object(
-          std::make_shared<ObjClass>(obj_helpers::AsString(readConstant()))));
+          std::make_shared<ObjClass>(obj_helpers::AsString(read_constant()))));
       break;
     }
     case OpCode::GET_PROPERTY: {
@@ -249,7 +250,7 @@ InterpretResult VM::run() {
       }
 
       auto instance = obj_helpers::AsInstance(peek(0));
-      auto name = readString();
+      auto name = read_string();
       if (instance->fields.contains(name)) {
         pop();
         push(instance->fields[name]);
@@ -265,7 +266,7 @@ InterpretResult VM::run() {
         return InterpretResult::InterpretRuntimeError;
       }
       auto instance = obj_helpers::AsInstance(peek(1));
-      instance->fields[readString()] = peek(0);
+      instance->fields[read_string()] = peek(0);
       auto property = pop();
       pop();
       push(property);
@@ -284,12 +285,12 @@ std::shared_ptr<ObjUpvalue> VM::captureUpvalue(uint8_t index) {
   auto prev_it = openUpvalues_.before_begin();
   auto it = openUpvalues_.begin();
 
-  while (it != openUpvalues_.end() && (*it)->stackIdx > index) {
+  while (it != openUpvalues_.end() && (*it)->stack_idx > index) {
     ++prev_it;
     ++it;
   }
 
-  if (it != openUpvalues_.end() && (*it)->stackIdx == index) {
+  if (it != openUpvalues_.end() && (*it)->stack_idx == index) {
     return *it;
   }
 
@@ -298,29 +299,29 @@ std::shared_ptr<ObjUpvalue> VM::captureUpvalue(uint8_t index) {
 }
 
 void VM::closeUpvalues(uint8_t index) {
-  while (!openUpvalues_.empty() && openUpvalues_.front()->stackIdx >= index) {
+  while (!openUpvalues_.empty() && openUpvalues_.front()->stack_idx >= index) {
     auto upvalue = openUpvalues_.front();
-    upvalue->closed = stack_[upvalue->stackIdx];
-    upvalue->stackIdx = -1;
+    upvalue->closed = stack_[upvalue->stack_idx];
+    upvalue->stack_idx = -1;
     openUpvalues_.pop_front();
   }
 }
 
-bool VM::callValue(Value callee, uint8_t argCount) {
+bool VM::callValue(Value callee, uint8_t arg_count) {
   if (obj_helpers::IsObjType(callee, Obj::Type::CLOSURE)) {
-    return call(obj_helpers::AsClosure(callee), argCount);
+    return call(obj_helpers::AsClosure(callee), arg_count);
   } else if (obj_helpers::IsNative(callee)) {
     auto native = obj_helpers::AsNative(callee);
     auto result =
-        native(argCount, stack_.data() + stack_.size() - argCount - 1);
-    for (int i = 0; i < argCount; i++) {
+        native(arg_count, stack_.data() + stack_.size() - arg_count - 1);
+    for (int i = 0; i < arg_count; i++) {
       pop();
     }
     push(result);
     return true;
   } else if (obj_helpers::IsClass(callee)) {
     auto klass = obj_helpers::AsClass(callee);
-    stack_[stack_.size() - argCount - 1] =
+    stack_[stack_.size() - arg_count - 1] =
         Value::Object(std::make_shared<ObjInstance>(klass));
     return true;
   }
@@ -329,10 +330,10 @@ bool VM::callValue(Value callee, uint8_t argCount) {
   return false;
 }
 
-bool VM::call(ObjClosure *closure, uint8_t argCount) {
-  if (argCount != closure->function->arity) {
+bool VM::call(ObjClosure *closure, uint8_t arg_count) {
+  if (arg_count != closure->function->arity) {
     runtimeError("Expected " + std::to_string(closure->function->arity) +
-                 " arguments but got " + std::to_string(argCount) + ".");
+                 " arguments but got " + std::to_string(arg_count) + ".");
     return false;
   }
 
@@ -341,7 +342,7 @@ bool VM::call(ObjClosure *closure, uint8_t argCount) {
     return false;
   }
 
-  frames_.emplace_back(CallFrame{closure, 0, stack_.size() - argCount - 1});
+  frames_.emplace_back(CallFrame{closure, 0, stack_.size() - arg_count - 1});
   return true;
 }
 
@@ -374,9 +375,9 @@ void VM::runtimeError(const std::string &message) {
 
   for (const auto &frame : std::views::reverse(frames_)) {
     auto function = frame.closure->function;
-    auto codeIdx = frame.codeIdx;
+    auto code_idx = frame.code_idx;
     auto chunk = function->chunk;
-    auto line = chunk->lines[codeIdx];
+    auto line = chunk->lines[code_idx];
     auto name = function->name->str.empty() ? function->name->str : "script";
     std::cerr << "[line " << line << "] in " << name << std::endl;
   }

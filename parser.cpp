@@ -30,11 +30,11 @@ void Parser::errorAtCurrent(const std::string &message) {
 void Parser::error(const std::string &message) { errorAt(previous_, message); }
 
 void Parser::errorAt(const Token &token, const std::string &message) {
-  if (panicMode_) {
+  if (panic_mode_) {
     return;
   }
 
-  panicMode_ = true;
+  panic_mode_ = true;
   std::cerr << std::format("[line {}] Error", token.line);
 
   if (token.type == TokenType::END_OF_FILE) {
@@ -47,7 +47,7 @@ void Parser::errorAt(const Token &token, const std::string &message) {
   }
   std::cerr << std::format(": {}", message) << std::endl;
 
-  hadError_ = true;
+  had_error_ = true;
 }
 
 bool Parser::match(TokenType type) {

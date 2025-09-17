@@ -12,9 +12,9 @@ int simpleInstruction(std::string_view name, int offset) {
 }
 
 int constantInstruction(std::string_view name, const Chunk &chunk, int offset) {
-  uint8_t constantIdx = chunk.code[offset + 1];
-  std::cout << std::format("{:<16} {:>4} '{}' \n", name, constantIdx,
-                           chunk.constants[constantIdx]);
+  uint8_t constant_idx = chunk.code[offset + 1];
+  std::cout << std::format("{:<16} {:>4} '{}' \n", name, constant_idx,
+                           chunk.constants[constant_idx]);
   return offset + 2;
 }
 
@@ -88,16 +88,16 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return byteInstruction("OP_CALL", chunk, offset);
   case OpCode::CLOSURE: {
     offset++;
-    uint8_t constantIdx = chunk.code[offset++];
-    std::cout << std::format("{:<16} {:>4}\n", "OP_CLOSURE", constantIdx);
-    std::cout << chunk.constants[constantIdx] << std::endl;
+    uint8_t constant_idx = chunk.code[offset++];
+    std::cout << std::format("{:<16} {:>4}\n", "OP_CLOSURE", constant_idx);
+    std::cout << chunk.constants[constant_idx] << std::endl;
 
-    auto function = obj_helpers::AsFunction(chunk.constants[constantIdx]);
-    for (int i = 0; i < function->upvalueCount; i++) {
-      int isLocal = chunk.code[offset++];
+    auto function = obj_helpers::AsFunction(chunk.constants[constant_idx]);
+    for (int i = 0; i < function->upvalue_count; i++) {
+      int is_local = chunk.code[offset++];
       int index = chunk.code[offset++];
       std::cout << std::format("{:04d}      |                     {} {}\n",
-                               offset, isLocal ? "local" : "upvalue", index);
+                               offset, is_local ? "local" : "upvalue", index);
     }
 
     return offset;

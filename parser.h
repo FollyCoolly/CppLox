@@ -13,7 +13,7 @@ public:
   void error(const std::string &message);
   void errorAt(const Token &token, const std::string &message);
 
-  bool hadError() const { return hadError_; }
+  bool hadError() const { return had_error_; }
 
   const Token &previous() const { return previous_; }
   const Token &current() const { return current_; }
@@ -21,13 +21,13 @@ public:
   bool match(TokenType type);
   bool check(TokenType type) const;
 
-  bool panicMode() const { return panicMode_; }
-  void resetPanicMode() { panicMode_ = false; }
+  bool panicMode() const { return panic_mode_; }
+  void resetPanicMode() { panic_mode_ = false; }
 
 private:
   Scanner scanner_;
   Token current_;
   Token previous_;
-  bool hadError_{false};
-  bool panicMode_{false};
+  bool had_error_{false};
+  bool panic_mode_{false};
 };

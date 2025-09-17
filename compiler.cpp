@@ -93,8 +93,8 @@ void Compiler::parsePrecedence(Compiler *compiler, Precedence precedence) {
     return;
   }
 
-  bool canAssign = precedence <= Precedence::ASSIGNMENT;
-  prefixRule(compiler, canAssign);
+  bool can_assign = precedence <= Precedence::ASSIGNMENT;
+  prefixRule(compiler, can_assign);
 
   while (precedence <=
          compiler->getRule(compiler->parser_->current().type)->precedence) {
@@ -106,10 +106,10 @@ void Compiler::parsePrecedence(Compiler *compiler, Precedence precedence) {
       return;
     }
 
-    infixRule(compiler, canAssign);
+    infixRule(compiler, can_assign);
   }
 
-  if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
+  if (can_assign && compiler->parser_->match(TokenType::EQUAL)) {
     compiler->parser_->error("Invalid assignment target.");
   }
 }
@@ -155,13 +155,13 @@ void Compiler::expression(Compiler *compiler) {
   parsePrecedence(compiler, Precedence::ASSIGNMENT);
 }
 
-void Compiler::dot(Compiler *compiler, bool canAssign) {
+void Compiler::dot(Compiler *compiler, bool can_assign) {
   compiler->parser_->consume(TokenType::IDENTIFIER,
                              "Expect property name after '.'.");
   auto nameConstant =
       compiler->identifierConstant(compiler->parser_->previous());
 
-  if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
+  if (can_assign && compiler->parser_->match(TokenType::EQUAL)) {
     expression(compiler);
     compiler->emitBytes(OpCode::GET_PROPERTY, nameConstant);
   } else {
@@ -169,13 +169,13 @@ void Compiler::dot(Compiler *compiler, bool canAssign) {
   }
 }
 
-void Compiler::grouping(Compiler *compiler, bool canAssign) {
+void Compiler::grouping(Compiler *compiler, bool can_assign) {
   expression(compiler);
   compiler->parser_->consume(TokenType::RIGHT_PAREN,
                              "Expect ')' after expression.");
 }
 
-void Compiler::unary(Compiler *compiler, bool canAssign) {
+void Compiler::unary(Compiler *compiler, bool can_assign) {
   TokenType operatorType = compiler->parser_->previous().type;
 
   expression(compiler);
@@ -192,7 +192,7 @@ void Compiler::unary(Compiler *compiler, bool canAssign) {
   }
 }
 
-void Compiler::binary(Compiler *compiler, bool canAssign) {
+void Compiler::binary(Compiler *compiler, bool can_assign) {
   TokenType operatorType = compiler->parser_->previous().type;
   auto rule = getRule(operatorType);
   parsePrecedence(compiler, static_cast<Precedence>(
@@ -233,18 +233,18 @@ void Compiler::binary(Compiler *compiler, bool canAssign) {
   }
 }
 
-void Compiler::number(Compiler *compiler, bool canAssign) {
+void Compiler::number(Compiler *compiler, bool can_assign) {
   double value = std::stod(compiler->parser_->previous().start);
   compiler->emitConstant(Value::Number(value));
 }
 
-void Compiler::string(Compiler *compiler, bool canAssign) {
+void Compiler::string(Compiler *compiler, bool can_assign) {
   compiler->emitConstant(Value::Object(
       ObjString::getObject(compiler->parser_->previous().start + 1,
                            compiler->parser_->previous().length - 2)));
 }
 
-void Compiler::literal(Compiler *compiler, bool canAssign) {
+void Compiler::literal(Compiler *compiler, bool can_assign) {
   switch (compiler->parser_->previous().type) {
   case TokenType::FALSE:
     compiler->emitByte(OpCode::FALSE);
@@ -329,40 +329,40 @@ void Compiler::varDeclaration(Compiler *compiler) {
   defineVariable(compiler, global);
 }
 
-void Compiler::call(Compiler *compiler, bool canAssign) {
-  auto argCount = argumentList(compiler);
-  compiler->emitBytes(OpCode::CALL, argCount);
+void Compiler::call(Compiler *compiler, bool can_assign) {
+  auto arg_count = argumentList(compiler);
+  compiler->emitBytes(OpCode::CALL, arg_count);
 }
 
 uint8_t Compiler::argumentList(Compiler *compiler) {
-  uint8_t argCount = 0;
+  uint8_t arg_count = 0;
   if (!compiler->parser_->check(TokenType::RIGHT_PAREN)) {
     do {
       expression(compiler);
-      if (argCount == 255) {
+      if (arg_count == 255) {
         compiler->parser_->error("Can't have more than 255 arguments.");
         return 0;
       }
-      argCount++;
+      arg_count++;
     } while (compiler->parser_->match(TokenType::COMMA));
   }
   compiler->parser_->consume(TokenType::RIGHT_PAREN,
                              "Expect ')' after arguments.");
-  return argCount;
+  return arg_count;
 }
 
 uint8_t Compiler::parseVariable(Compiler *compiler,
                                 const std::string &errorMessage) {
   compiler->parser_->consume(TokenType::IDENTIFIER, errorMessage);
   declareVariable(compiler);
-  if (compiler->contexts_.back().scopeDepth > 0) {
+  if (compiler->contexts_.back().scope_depth > 0) {
     return 0;
   }
   return compiler->identifierConstant(compiler->parser_->previous());
 }
 
 void Compiler::declareVariable(Compiler *compiler) {
-  if (compiler->contexts_.back().scopeDepth == 0) {
+  if (compiler->contexts_.back().scope_depth == 0) {
     return;
   }
   const auto &name = compiler->parser_->previous();
@@ -370,7 +370,7 @@ void Compiler::declareVariable(Compiler *compiler) {
   for (int i = compiler->contexts_.back().locals.size() - 1; i >= 0; i--) {
     auto &local = compiler->contexts_.back().locals[i];
     if (local.depth != -1 &&
-        local.depth < compiler->contexts_.back().scopeDepth) {
+        local.depth < compiler->contexts_.back().scope_depth) {
       break;
     }
     if (identifiersEqual(local.name, name)) {
@@ -387,7 +387,7 @@ uint8_t Compiler::identifierConstant(const Token &name) {
 }
 
 void Compiler::defineVariable(Compiler *compiler, uint8_t global) {
-  if (compiler->contexts_.back().scopeDepth > 0) {
+  if (compiler->contexts_.back().scope_depth > 0) {
     compiler->markInitialized();
     return;
   }
@@ -405,9 +405,9 @@ void Compiler::addLocal(const Token &name) {
 
 void Compiler::markInitialized() {
   auto &current_context = contexts_.back();
-  if (current_context.scopeDepth == 0)
+  if (current_context.scope_depth == 0)
     return;
-  contexts_.back().locals.back().depth = current_context.scopeDepth;
+  contexts_.back().locals.back().depth = current_context.scope_depth;
 }
 
 void Compiler::function(Compiler *compiler, FunctionType type) {
@@ -450,7 +450,7 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
                       compiler->makeConstant(Value::Object(function)));
   const auto &upvalues = compiler->contexts_.back().upvalues;
   for (int i = 0; i < upvalues.size(); i++) {
-    compiler->emitByte(upvalues[i].isLocal ? 1 : 0);
+    compiler->emitByte(upvalues[i].is_local ? 1 : 0);
     compiler->emitByte(upvalues[i].index);
   }
 }
@@ -474,7 +474,7 @@ void Compiler::statement(Compiler *compiler) {
 }
 
 void Compiler::returnStatement(Compiler *compiler) {
-  if (compiler->contexts_.back().functionType == FunctionType::SCRIPT) {
+  if (compiler->contexts_.back().function_type == FunctionType::SCRIPT) {
     compiler->parser_->error("Can't return from top-level code.");
   }
 
@@ -606,7 +606,7 @@ void Compiler::patchJump(int offset) {
   code[offset + 1] = jump & 0xFF;
 }
 
-void Compiler::logicalAnd(Compiler *compiler, bool canAssign) {
+void Compiler::logicalAnd(Compiler *compiler, bool can_assign) {
   int endJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
 
   compiler->emitByte(OpCode::POP);
@@ -615,7 +615,7 @@ void Compiler::logicalAnd(Compiler *compiler, bool canAssign) {
   compiler->patchJump(endJump);
 }
 
-void Compiler::logicalOr(Compiler *compiler, bool canAssign) {
+void Compiler::logicalOr(Compiler *compiler, bool can_assign) {
   int elseJump = compiler->emitJump(OpCode::JUMP_IF_FALSE);
   int endJump = compiler->emitJump(OpCode::JUMP);
 
@@ -661,8 +661,8 @@ void Compiler::synchronize(Compiler *compiler) {
   }
 }
 
-void Compiler::variable(Compiler *compiler, bool canAssign) {
-  namedVariable(compiler, compiler->parser_->previous(), canAssign);
+void Compiler::variable(Compiler *compiler, bool can_assign) {
+  namedVariable(compiler, compiler->parser_->previous(), can_assign);
 }
 
 int Compiler::resolveLocal(CompileContext &context, const Token &name) {
@@ -680,7 +680,7 @@ int Compiler::resolveLocal(CompileContext &context, const Token &name) {
 }
 
 void Compiler::namedVariable(Compiler *compiler, const Token &name,
-                             bool canAssign) {
+                             bool can_assign) {
 
   OpCode getOp, setOp;
   int arg = compiler->resolveLocal(compiler->contexts_.back(), name);
@@ -697,7 +697,7 @@ void Compiler::namedVariable(Compiler *compiler, const Token &name,
     setOp = OpCode::SET_GLOBAL;
   }
 
-  if (canAssign && compiler->parser_->match(TokenType::EQUAL)) {
+  if (can_assign && compiler->parser_->match(TokenType::EQUAL)) {
     expression(compiler);
     compiler->emitBytes(setOp, static_cast<uint8_t>(arg));
   } else {
@@ -725,10 +725,11 @@ int Compiler::resolveUpvalue(int contextIdx, const Token &name) {
   return -1;
 }
 
-int Compiler::addUpvalue(CompileContext &context, uint8_t index, bool isLocal) {
+int Compiler::addUpvalue(CompileContext &context, uint8_t index,
+                         bool is_local) {
   auto &upvalues = context.upvalues;
   for (int i = 0; i < upvalues.size(); i++) {
-    if (upvalues[i].index == index && upvalues[i].isLocal == isLocal) {
+    if (upvalues[i].index == index && upvalues[i].is_local == is_local) {
       return i;
     }
   }
@@ -738,8 +739,8 @@ int Compiler::addUpvalue(CompileContext &context, uint8_t index, bool isLocal) {
     return 0;
   }
 
-  context.function->upvalueCount++;
-  upvalues.push_back({index, isLocal});
+  context.function->upvalue_count++;
+  upvalues.push_back({index, is_local});
   return upvalues.size() - 1;
 }
 
@@ -752,15 +753,15 @@ void Compiler::block(Compiler *compiler) {
 }
 
 void Compiler::beginScope(Compiler *compiler) {
-  compiler->contexts_.back().scopeDepth++;
+  compiler->contexts_.back().scope_depth++;
 }
 
 void Compiler::endScope(Compiler *compiler) {
   auto &current_context = compiler->contexts_.back();
-  current_context.scopeDepth--;
+  current_context.scope_depth--;
   while (current_context.locals.size() > 0 &&
-         current_context.locals.back().depth > current_context.scopeDepth) {
-    if (current_context.locals.back().isCaptured) {
+         current_context.locals.back().depth > current_context.scope_depth) {
+    if (current_context.locals.back().is_captured) {
       compiler->emitByte(OpCode::CLOSE_UPVALUE);
     } else {
       compiler->emitByte(OpCode::POP);

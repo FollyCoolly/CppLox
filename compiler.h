@@ -31,7 +31,7 @@ enum class FunctionType {
 class Compiler;
 
 struct ParseRule {
-  using ParseFn = void (*)(Compiler *, bool canAssign);
+  using ParseFn = void (*)(Compiler *, bool can_assign);
   ParseFn prefix;
   ParseFn infix;
   Precedence precedence;
@@ -40,18 +40,18 @@ struct ParseRule {
 struct Local {
   Token name;
   int depth;
-  bool isCaptured;
+  bool is_captured;
 };
 
 struct Upvalue {
   uint8_t index;
-  bool isLocal;
+  bool is_local;
 };
 
 struct CompileContext {
-  int scopeDepth;
+  int scope_depth;
   std::shared_ptr<ObjFunction> function;
-  FunctionType functionType;
+  FunctionType function_type;
   std::vector<Local> locals;
   std::vector<Upvalue> upvalues;
 };
@@ -81,7 +81,7 @@ public:
 
   int resolveUpvalue(int contextIdx, const Token &name);
   int resolveLocal(CompileContext &context, const Token &name);
-  int addUpvalue(CompileContext &context, uint8_t index, bool isLocal);
+  int addUpvalue(CompileContext &context, uint8_t index, bool is_local);
 
   static void parsePrecedence(Compiler *compiler, Precedence precedence);
   static const ParseRule *getRule(TokenType type);
@@ -93,7 +93,7 @@ public:
   static void declareVariable(Compiler *compiler);
 
   static void function(Compiler *compiler, FunctionType type);
-  static void call(Compiler *compiler, bool canAssign);
+  static void call(Compiler *compiler, bool can_assign);
   static uint8_t argumentList(Compiler *compiler);
 
   static void declaration(Compiler *compiler);
@@ -108,19 +108,19 @@ public:
   static void returnStatement(Compiler *compiler);
   static void expressionStatement(Compiler *compiler);
   static void expression(Compiler *compiler);
-  static void dot(Compiler *compiler, bool canAssign);
-  static void grouping(Compiler *compiler, bool canAssign);
-  static void unary(Compiler *compiler, bool canAssign);
-  static void binary(Compiler *compiler, bool canAssign);
-  static void number(Compiler *compiler, bool canAssign);
-  static void literal(Compiler *compiler, bool canAssign);
-  static void string(Compiler *compiler, bool canAssign);
-  static void variable(Compiler *compiler, bool canAssign);
+  static void dot(Compiler *compiler, bool can_assign);
+  static void grouping(Compiler *compiler, bool can_assign);
+  static void unary(Compiler *compiler, bool can_assign);
+  static void binary(Compiler *compiler, bool can_assign);
+  static void number(Compiler *compiler, bool can_assign);
+  static void literal(Compiler *compiler, bool can_assign);
+  static void string(Compiler *compiler, bool can_assign);
+  static void variable(Compiler *compiler, bool can_assign);
   static void namedVariable(Compiler *compiler, const Token &name,
-                            bool canAssign);
+                            bool can_assign);
   static void block(Compiler *compiler);
-  static void logicalAnd(Compiler *compiler, bool canAssign);
-  static void logicalOr(Compiler *compiler, bool canAssign);
+  static void logicalAnd(Compiler *compiler, bool can_assign);
+  static void logicalOr(Compiler *compiler, bool can_assign);
   static void whileStatement(Compiler *compiler);
   static void forStatement(Compiler *compiler);
 

@@ -33,12 +33,12 @@ std::string readFile(const std::filesystem::path &path) {
 
   // Get file size
   file.seekg(0, std::ios::end);
-  const auto fileSize = file.tellg();
+  const auto file_size = file.tellg();
   file.seekg(0, std::ios::beg);
 
   // Read file
-  std::string content(fileSize, '\0');
-  if (!file.read(content.data(), fileSize)) {
+  std::string content(file_size, '\0');
+  if (!file.read(content.data(), file_size)) {
     std::cerr << "Could not read file \"" << path.string() << "\"" << std::endl;
     std::exit(74);
   }

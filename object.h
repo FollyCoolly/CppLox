@@ -63,12 +63,12 @@ private:
 
 struct ObjFunction : Obj {
   int arity;
-  int upvalueCount;
+  int upvalue_count;
   std::shared_ptr<Chunk> chunk;
   ObjString *name;
 
   ObjFunction(int arity, ObjString *name)
-      : Obj{Type::FUNCTION}, arity(arity), upvalueCount(0),
+      : Obj{Type::FUNCTION}, arity(arity), upvalue_count(0),
         chunk(std::make_unique<Chunk>()), name(name) {}
 };
 
@@ -80,19 +80,19 @@ struct ObjNative : Obj {
 
 struct ObjUpvalue : Obj {
   Value closed;
-  int stackIdx;
+  int stack_idx;
 
-  ObjUpvalue(int stackIdx) : Obj{Type::UPVALUE}, stackIdx(stackIdx) {}
+  ObjUpvalue(int stack_idx) : Obj{Type::UPVALUE}, stack_idx(stack_idx) {}
 };
 
 struct ObjClosure : Obj {
-  int upvalueCount;
+  int upvalue_count;
   std::vector<std::shared_ptr<ObjUpvalue>> upvalues;
   ObjFunction *function;
 
   ObjClosure(ObjFunction *function)
       : Obj{Type::CLOSURE}, function(function),
-        upvalueCount(function->upvalueCount), upvalues(upvalueCount) {}
+        upvalue_count(function->upvalue_count), upvalues(upvalue_count) {}
 };
 
 struct ObjClass : Obj {
