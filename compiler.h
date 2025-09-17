@@ -101,6 +101,7 @@ public:
   static void functionDeclaration(Compiler *compiler);
   static void classDeclaration(Compiler *compiler);
 
+  static void method(Compiler *compiler);
   static void statement(Compiler *compiler);
   static void printStatement(Compiler *compiler);
   static void ifStatement(Compiler *compiler);

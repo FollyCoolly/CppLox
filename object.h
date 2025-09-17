@@ -5,6 +5,7 @@
 #include "value.h"
 #include <format>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -96,6 +97,7 @@ struct ObjClosure : Obj {
 
 struct ObjClass : Obj {
   ObjString *name;
+  std::unordered_map<std::string, std::shared_ptr<ObjClosure>> methods;
 
   ObjClass(ObjString *name) : Obj{Type::CLASS}, name(name) {}
 };

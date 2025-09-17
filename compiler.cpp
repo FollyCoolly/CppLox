@@ -277,18 +277,37 @@ void Compiler::declaration(Compiler *compiler) {
 
 void Compiler::classDeclaration(Compiler *compiler) {
   compiler->parser_->consume(TokenType::IDENTIFIER, "Expect class name.");
+  auto className = compiler->parser_->previous();
   auto nameConstant =
       compiler->identifierConstant(compiler->parser_->previous());
 
   declareVariable(compiler);
   compiler->emitBytes(OpCode::CLASS, nameConstant);
   defineVariable(compiler, nameConstant);
+  namedVariable(compiler, className, false);
 
   compiler->parser_->consume(TokenType::LEFT_BRACE,
                              "Expect '{' before class body.");
 
+  while (!compiler->parser_->check(TokenType::RIGHT_BRACE) &&
+         !compiler->parser_->check(TokenType::END_OF_FILE)) {
+    method(compiler);
+  }
+
   compiler->parser_->consume(TokenType::RIGHT_BRACE,
                              "Expect '}' after class body.");
+  compiler->emitByte(OpCode::POP);
+}
+
+void Compiler::method(Compiler *compiler) {
+  compiler->parser_->consume(TokenType::IDENTIFIER, "Expect method name.");
+  auto method_name_constant =
+      compiler->identifierConstant(compiler->parser_->previous());
+
+  FunctionType type = FunctionType::FUNCTION;
+  function(compiler, type);
+
+  compiler->emitBytes(OpCode::METHOD, method_name_constant);
 }
 
 void Compiler::functionDeclaration(Compiler *compiler) {

@@ -37,6 +37,7 @@ enum class OpCode : uint8_t {
   CLASS,
   SET_PROPERTY,
   GET_PROPERTY,
+  METHOD,
 };
 
 constexpr uint8_t to_underlying(OpCode op) { return static_cast<uint8_t>(op); }
