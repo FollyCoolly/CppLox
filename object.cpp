@@ -29,6 +29,9 @@ std::ostream &operator<<(std::ostream &os, const Obj &obj) {
   case Obj::Type::INSTANCE:
     os << "<instance>";
     break;
+  case Obj::Type::BOUND_METHOD:
+    os << "<bound method>";
+    break;
   }
   return os;
 }

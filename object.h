@@ -22,6 +22,7 @@ struct Obj {
     UPVALUE,
     CLASS,
     INSTANCE,
+    BOUND_METHOD,
   };
 
   Type type;
@@ -109,6 +110,13 @@ struct ObjInstance : Obj {
   ObjInstance(ObjClass *klass) : Obj{Type::INSTANCE}, klass(klass) {}
 };
 
+struct ObjBoundMethod : Obj {
+  Value receiver;
+  ObjClosure *method;
+  ObjBoundMethod(ObjClosure *method)
+      : Obj{Type::BOUND_METHOD}, method(method) {}
+};
+
 namespace obj_helpers {
 inline bool IsObjType(const Value &value, Obj::Type type) {
   return value.type == Value::Type::OBJECT &&
@@ -143,6 +151,10 @@ inline bool IsInstance(const Value &value) {
   return IsObjType(value, Obj::Type::INSTANCE);
 }
 
+inline bool IsBoundMethod(const Value &value) {
+  return IsObjType(value, Obj::Type::BOUND_METHOD);
+}
+
 inline ObjString *AsString(const Value &value) {
   return static_cast<ObjString *>(Value::AsObject(value));
 }
@@ -169,6 +181,10 @@ inline ObjClass *AsClass(const Value &value) {
 
 inline ObjInstance *AsInstance(const Value &value) {
   return static_cast<ObjInstance *>(Value::AsObject(value));
+}
+
+inline ObjBoundMethod *AsBoundMethod(const Value &value) {
+  return static_cast<ObjBoundMethod *>(Value::AsObject(value));
 }
 } // namespace obj_helpers
 
@@ -202,6 +218,10 @@ template <> struct std::formatter<Obj> {
       return std::format_to(
           ctx.out(), "<{} instance>",
           static_cast<const ObjInstance &>(obj).klass->name->str);
+    case Obj::Type::BOUND_METHOD:
+      return std::format_to(
+          ctx.out(), "<bound method {}>",
+          static_cast<const ObjBoundMethod &>(obj).method->function->name->str);
     }
     return ctx.out();
   }
