@@ -272,6 +272,14 @@ InterpretResult VM::run() {
       push(property);
       break;
     }
+    case OpCode::METHOD: {
+      auto name = read_string();
+      auto method = peek(0);
+      auto klass = obj_helpers::AsClass(peek(1));
+      klass->methods[name] = method;
+      pop();
+      break;
+    }
     default: {
       runtimeError("Unknown opcode: " + std::to_string(instruction));
       return InterpretResult::InterpretRuntimeError;

@@ -97,7 +97,7 @@ struct ObjClosure : Obj {
 
 struct ObjClass : Obj {
   ObjString *name;
-  std::unordered_map<std::string, std::shared_ptr<ObjClosure>> methods;
+  std::unordered_map<std::string, Value> methods;
 
   ObjClass(ObjString *name) : Obj{Type::CLASS}, name(name) {}
 };
