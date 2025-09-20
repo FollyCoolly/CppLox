@@ -422,7 +422,8 @@ bool VM::bindMethod(ObjClass *klass, const std::string &name) {
   }
   auto method = klass->methods[name];
 
-  auto bound_method = std::make_shared<ObjBoundMethod>(peek(0), method);
+  auto bound_method =
+      std::make_shared<ObjBoundMethod>(peek(0), obj_helpers::AsClosure(method));
 
   pop();
   push(Value::Object(bound_method));
