@@ -257,8 +257,10 @@ InterpretResult VM::run() {
         break;
       }
 
-      runtimeError(std::format("Undefined property '{}'.", name));
-      return InterpretResult::InterpretRuntimeError;
+      if (!bindMethod(instance->klass, name)) {
+        return InterpretResult::InterpretRuntimeError;
+      }
+      break;
     }
     case OpCode::SET_PROPERTY: {
       if (!obj_helpers::IsInstance(peek(1))) {
@@ -316,9 +318,15 @@ void VM::closeUpvalues(uint8_t index) {
 }
 
 bool VM::callValue(Value callee, uint8_t arg_count) {
-  if (obj_helpers::IsObjType(callee, Obj::Type::CLOSURE)) {
+  if (!Value::IsObject(callee)) {
+    runtimeError("Callee need to be an object");
+    return false;
+  }
+
+  switch (Value::AsObject(callee)->type) {
+  case Obj::Type::CLOSURE:
     return call(obj_helpers::AsClosure(callee), arg_count);
-  } else if (obj_helpers::IsNative(callee)) {
+  case Obj::Type::NATIVE: {
     auto native = obj_helpers::AsNative(callee);
     auto result =
         native(arg_count, stack_.data() + stack_.size() - arg_count - 1);
@@ -327,15 +335,21 @@ bool VM::callValue(Value callee, uint8_t arg_count) {
     }
     push(result);
     return true;
-  } else if (obj_helpers::IsClass(callee)) {
+  }
+  case Obj::Type::CLASS: {
     auto klass = obj_helpers::AsClass(callee);
     stack_[stack_.size() - arg_count - 1] =
         Value::Object(std::make_shared<ObjInstance>(klass));
     return true;
   }
-
-  runtimeError("Can only call functions.");
-  return false;
+  case Obj::Type::BOUND_METHOD: {
+    auto bound = obj_helpers::AsBoundMethod(callee);
+    return call(bound->method, arg_count);
+  }
+  default:
+    runtimeError("Callee need to be a callable object.");
+    return false;
+  }
 }
 
 bool VM::call(ObjClosure *closure, uint8_t arg_count) {
@@ -399,4 +413,18 @@ bool VM::isFalsey(const Value &value) {
 
 void VM::defineNative(const std::string &name, NativeFunction function) {
   globals_[name] = Value::Object(std::make_shared<ObjNative>(function));
+}
+
+bool VM::bindMethod(ObjClass *klass, const std::string &name) {
+  if (!klass->methods.contains(name)) {
+    runtimeError("Undefined property '" + name + "'.");
+    return false;
+  }
+  auto method = klass->methods[name];
+
+  auto bound_method = std::make_shared<ObjBoundMethod>(peek(0), method);
+
+  pop();
+  push(Value::Object(bound_method));
+  return true;
 }

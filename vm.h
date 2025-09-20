@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <forward_list>
 #include <memory>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -50,6 +51,7 @@ private:
   void defineNative(const std::string &name, NativeFunction function);
   std::shared_ptr<ObjUpvalue> captureUpvalue(uint8_t index);
   void closeUpvalues(uint8_t last_idx);
+  bool bindMethod(ObjClass *klass, const std::string &name);
 
   static bool isFalsey(const Value &value);
 };

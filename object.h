@@ -113,8 +113,8 @@ struct ObjInstance : Obj {
 struct ObjBoundMethod : Obj {
   Value receiver;
   ObjClosure *method;
-  ObjBoundMethod(ObjClosure *method)
-      : Obj{Type::BOUND_METHOD}, method(method) {}
+  ObjBoundMethod(Value receiver, ObjClosure *method)
+      : Obj{Type::BOUND_METHOD}, receiver(receiver), method(method) {}
 };
 
 namespace obj_helpers {
