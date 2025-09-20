@@ -26,6 +26,7 @@ enum class Precedence : uint8_t {
 enum class FunctionType {
   FUNCTION,
   SCRIPT,
+  METHOD,
 };
 
 class Compiler;
@@ -54,6 +55,10 @@ struct CompileContext {
   FunctionType function_type;
   std::vector<Local> locals;
   std::vector<Upvalue> upvalues;
+};
+
+struct ClassContext {
+  ClassContext *enclosing;
 };
 
 class Compiler {
@@ -118,6 +123,7 @@ public:
   static void variable(Compiler *compiler, bool can_assign);
   static void namedVariable(Compiler *compiler, const Token &name,
                             bool can_assign);
+  static void handleThis(Compiler *compiler, bool can_assign);
   static void block(Compiler *compiler);
   static void logicalAnd(Compiler *compiler, bool can_assign);
   static void logicalOr(Compiler *compiler, bool can_assign);
@@ -130,4 +136,5 @@ public:
 private:
   std::vector<CompileContext> contexts_;
   std::unique_ptr<Parser> parser_;
+  ClassContext *current_class_;
 };

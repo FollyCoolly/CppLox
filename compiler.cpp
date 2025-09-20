@@ -143,12 +143,21 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::AND, {Compiler::logicalAnd, nullptr, Precedence::AND}},
       {TokenType::OR, {Compiler::logicalOr, nullptr, Precedence::OR}},
       {TokenType::DOT, {nullptr, Compiler::dot, Precedence::CALL}},
+      {TokenType::THIS, {Compiler::handleThis, nullptr, Precedence::NONE}},
   };
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
                              std::to_string(static_cast<int>(type)));
   }
   return &rules[type];
+}
+
+void Compiler::handleThis(Compiler *compiler, bool can_assign) {
+  if (compiler->current_class_ == nullptr) {
+    compiler->parser_->error("Cannot use 'this' outside of a class.");
+    return;
+  }
+  variable(compiler, false);
 }
 
 void Compiler::expression(Compiler *compiler) {
@@ -284,6 +293,11 @@ void Compiler::classDeclaration(Compiler *compiler) {
   declareVariable(compiler);
   compiler->emitBytes(OpCode::CLASS, nameConstant);
   defineVariable(compiler, nameConstant);
+
+  ClassContext class_context;
+  class_context.enclosing = compiler->current_class_;
+  compiler->current_class_ = &class_context;
+
   namedVariable(compiler, className, false);
 
   compiler->parser_->consume(TokenType::LEFT_BRACE,
@@ -297,6 +311,8 @@ void Compiler::classDeclaration(Compiler *compiler) {
   compiler->parser_->consume(TokenType::RIGHT_BRACE,
                              "Expect '}' after class body.");
   compiler->emitByte(OpCode::POP);
+
+  compiler->current_class_ = compiler->current_class_->enclosing;
 }
 
 void Compiler::method(Compiler *compiler) {
@@ -304,8 +320,7 @@ void Compiler::method(Compiler *compiler) {
   auto method_name_constant =
       compiler->identifierConstant(compiler->parser_->previous());
 
-  FunctionType type = FunctionType::FUNCTION;
-  function(compiler, type);
+  function(compiler, FunctionType::METHOD);
 
   compiler->emitBytes(OpCode::METHOD, method_name_constant);
 }
@@ -418,6 +433,9 @@ void Compiler::function(Compiler *compiler, FunctionType type) {
       ObjString::getObject(compiler->parser_->previous().start,
                            compiler->parser_->previous().length)
           .get();
+  auto slot_zero_token =
+      type != FunctionType::FUNCTION ? Token::thisToken() : Token::emptyToken();
+  compiler->contexts_.back().locals.push_back(Local{slot_zero_token, 0, false});
 
   compiler->beginScope(compiler);
 

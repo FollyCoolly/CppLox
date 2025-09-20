@@ -344,6 +344,7 @@ bool VM::callValue(Value callee, uint8_t arg_count) {
   }
   case Obj::Type::BOUND_METHOD: {
     auto bound = obj_helpers::AsBoundMethod(callee);
+    stack_[stack_.size() - arg_count - 1] = bound->receiver;
     return call(bound->method, arg_count);
   }
   default:

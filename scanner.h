@@ -61,6 +61,7 @@ struct Token {
   int line;
 
   static Token emptyToken() { return Token{.start = "", .length = 0}; }
+  static Token thisToken() { return Token{.start = "this", .length = 4}; }
 };
 
 class Scanner {
