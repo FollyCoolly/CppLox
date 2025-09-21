@@ -53,6 +53,9 @@ private:
   std::shared_ptr<ObjUpvalue> captureUpvalue(uint8_t index);
   void closeUpvalues(uint8_t last_idx);
   bool bindMethod(ObjClass *klass, const std::string &name);
+  bool invoke(const std::string &name, uint8_t arg_count);
+  bool invokeFromClass(ObjClass *klass, const std::string &name,
+                       uint8_t arg_count);
 
   static bool isFalsey(const Value &value);
 };

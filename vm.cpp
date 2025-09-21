@@ -282,6 +282,14 @@ InterpretResult VM::run() {
       pop();
       break;
     }
+    case OpCode::INVOKE: {
+      std::string name = read_string();
+      uint8_t arg_count = read_byte();
+      if (!invoke(name, arg_count)) {
+        return InterpretResult::InterpretRuntimeError;
+      }
+      break;
+    }
     default: {
       runtimeError("Unknown opcode: " + std::to_string(instruction));
       return InterpretResult::InterpretRuntimeError;
@@ -360,6 +368,36 @@ bool VM::callValue(Value callee, uint8_t arg_count) {
     runtimeError("Callee need to be a callable object.");
     return false;
   }
+}
+
+bool VM::invoke(const std::string &name, uint8_t arg_count) {
+  auto receiver = peek(arg_count);
+
+  if (!obj_helpers::IsInstance(receiver)) {
+    runtimeError("Only instances have methods.");
+    return false;
+  }
+
+  auto instance = obj_helpers::AsInstance(receiver);
+
+  if (instance->fields.contains(name)) {
+    auto value = instance->fields[name];
+    stack_[stack_.size() - arg_count - 1] = value;
+    return callValue(value, arg_count);
+  }
+
+  return invokeFromClass(instance->klass, name, arg_count);
+}
+
+bool VM::invokeFromClass(ObjClass *klass, const std::string &name,
+                         uint8_t arg_count) {
+  if (!klass->methods.contains(name)) {
+    runtimeError("Undefined property '" + name + "'.");
+    return false;
+  }
+
+  auto method = obj_helpers::AsClosure(klass->methods[name]);
+  return call(method, arg_count);
 }
 
 bool VM::call(ObjClosure *closure, uint8_t arg_count) {

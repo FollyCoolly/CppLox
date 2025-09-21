@@ -178,6 +178,10 @@ void Compiler::dot(Compiler *compiler, bool can_assign) {
   if (can_assign && compiler->parser_->match(TokenType::EQUAL)) {
     expression(compiler);
     compiler->emitBytes(OpCode::GET_PROPERTY, nameConstant);
+  } else if (compiler->parser_->match(TokenType::LEFT_PAREN)) {
+    auto arg_count = argumentList(compiler);
+    compiler->emitBytes(OpCode::INVOKE, nameConstant);
+    compiler->emitByte(arg_count);
   } else {
     compiler->emitBytes(OpCode::GET_PROPERTY, nameConstant);
   }

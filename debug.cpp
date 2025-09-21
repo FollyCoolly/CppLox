@@ -32,6 +32,14 @@ int jumpInstruction(std::string_view name, const Chunk &chunk, int sign,
                            offset + 3 + sign * jump);
   return offset + 3;
 }
+
+int invokeInstruction(std::string_view name, const Chunk &chunk, int offset) {
+  uint8_t constant_idx = chunk.code[offset + 1];
+  uint8_t arg_count = chunk.code[offset + 2];
+  std::cout << std::format("{:<16} {:>4} ({}) '{}'\n", name, constant_idx,
+                           arg_count, chunk.constants[constant_idx]);
+  return offset + 3;
+}
 } // namespace
 
 void disassembleChunk(const Chunk &chunk, std::string_view name) {
@@ -116,6 +124,8 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return constantInstruction("OP_SET_PROPERTY", chunk, offset);
   case OpCode::METHOD:
     return constantInstruction("OP_METHOD", chunk, offset);
+  case OpCode::INVOKE:
+    return invokeInstruction("OP_INVOKE", chunk, offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;
