@@ -340,6 +340,15 @@ bool VM::callValue(Value callee, uint8_t arg_count) {
     auto klass = obj_helpers::AsClass(callee);
     stack_[stack_.size() - arg_count - 1] =
         Value::Object(std::make_shared<ObjInstance>(klass));
+    if (klass->methods.contains(initName)) {
+      auto method = obj_helpers::AsClosure(klass->methods[initName]);
+      return call(method, arg_count);
+    } else if (arg_count != 0) {
+      runtimeError("Expected 0 arguments but got " + std::to_string(arg_count) +
+                   ".");
+      return false;
+    }
+
     return true;
   }
   case Obj::Type::BOUND_METHOD: {

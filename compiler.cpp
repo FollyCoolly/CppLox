@@ -1,6 +1,7 @@
 #include "compiler.h"
 
 #include <cstdint>
+#include <cstring>
 #include <unordered_map>
 
 #include "chunk.h"
@@ -67,7 +68,11 @@ void Compiler::emitBytes(OpCode op1, OpCode op2) {
 }
 
 void Compiler::emitReturn() {
-  emitByte(OpCode::NIL);
+  if (contexts_.back().function_type == FunctionType::INITIALIZER) {
+    emitBytes(OpCode::GET_LOCAL, 0);
+  } else {
+    emitByte(OpCode::NIL);
+  }
   emitByte(OpCode::RETURN);
 }
 
@@ -320,7 +325,12 @@ void Compiler::method(Compiler *compiler) {
   auto method_name_constant =
       compiler->identifierConstant(compiler->parser_->previous());
 
-  function(compiler, FunctionType::METHOD);
+  auto type = FunctionType::METHOD;
+  if (compiler->parser_->previous().length == 4 &&
+      memcmp("init", compiler->parser_->previous().start, 4) == 0) {
+    type = FunctionType::INITIALIZER;
+  }
+  function(compiler, type);
 
   compiler->emitBytes(OpCode::METHOD, method_name_constant);
 }
@@ -498,12 +508,16 @@ void Compiler::returnStatement(Compiler *compiler) {
 
   if (compiler->parser_->match(TokenType::SEMICOLON)) {
     compiler->emitReturn();
-  } else {
-    expression(compiler);
-    compiler->parser_->consume(TokenType::SEMICOLON,
-                               "Expect ';' after return value.");
-    compiler->emitByte(OpCode::RETURN);
+  } else if (compiler->contexts_.back().function_type ==
+             FunctionType::INITIALIZER) {
+    compiler->parser_->error("Can't return value from an initializer.");
+    // Go ahead and compile the trailing expression
   }
+
+  expression(compiler);
+  compiler->parser_->consume(TokenType::SEMICOLON,
+                             "Expect ';' after return value.");
+  compiler->emitByte(OpCode::RETURN);
 }
 
 void Compiler::forStatement(Compiler *compiler) {

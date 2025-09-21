@@ -27,6 +27,7 @@ public:
   static constexpr int FRAMES_MAX = 64;
   static constexpr int STACK_MAX =
       FRAMES_MAX * 256; // 8 bits can represent 256 values
+  static constexpr const char *initName = "init";
 
   InterpretResult interpret(const std::string &source);
 

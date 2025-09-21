@@ -27,6 +27,7 @@ enum class FunctionType {
   FUNCTION,
   SCRIPT,
   METHOD,
+  INITIALIZER,
 };
 
 class Compiler;
