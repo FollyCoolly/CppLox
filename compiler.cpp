@@ -295,7 +295,7 @@ void Compiler::declaration(Compiler *compiler) {
 
 void Compiler::classDeclaration(Compiler *compiler) {
   compiler->parser_->consume(TokenType::IDENTIFIER, "Expect class name.");
-  auto className = compiler->parser_->previous();
+  auto class_name = compiler->parser_->previous();
   auto nameConstant =
       compiler->identifierConstant(compiler->parser_->previous());
 
@@ -307,7 +307,20 @@ void Compiler::classDeclaration(Compiler *compiler) {
   class_context.enclosing = compiler->current_class_;
   compiler->current_class_ = &class_context;
 
-  namedVariable(compiler, className, false);
+  if (compiler->parser_->match(TokenType::LESS)) {
+    compiler->parser_->consume(TokenType::IDENTIFIER,
+                               "Expect superclass name.");
+    variable(compiler, false);
+
+    if (class_name == compiler->parser_->previous()) {
+      compiler->parser_->error("A class can not inherit from itself.");
+    }
+
+    namedVariable(compiler, class_name, false);
+    compiler->emitByte(OpCode::INHERIT);
+  }
+
+  namedVariable(compiler, class_name, false);
 
   compiler->parser_->consume(TokenType::LEFT_BRACE,
                              "Expect '{' before class body.");

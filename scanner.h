@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <string>
 
 enum class TokenType {
@@ -59,6 +60,12 @@ struct Token {
   const char *start;
   int length;
   int line;
+
+  bool operator==(const Token &other) const {
+    if (length != other.length)
+      return false;
+    return memcmp(start, other.start, length);
+  }
 
   static Token emptyToken() { return Token{.start = "", .length = 0}; }
   static Token thisToken() { return Token{.start = "this", .length = 4}; }

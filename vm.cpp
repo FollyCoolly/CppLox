@@ -290,6 +290,19 @@ InterpretResult VM::run() {
       }
       break;
     }
+    case OpCode::INHERIT: {
+      auto inherit_from = peek(1);
+      if (!obj_helpers::IsClass(inherit_from)) {
+        runtimeError("Superclass must be a class.");
+      }
+      auto super_class = obj_helpers::AsClass(inherit_from);
+
+      auto sub_class = obj_helpers::AsClass(peek(0));
+      sub_class->methods.insert(super_class->methods.begin(),
+                                super_class->methods.end());
+      pop();
+      break;
+    }
     default: {
       runtimeError("Unknown opcode: " + std::to_string(instruction));
       return InterpretResult::InterpretRuntimeError;
