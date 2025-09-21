@@ -128,6 +128,10 @@ int disassembleInstruction(const Chunk &chunk, int offset) {
     return invokeInstruction("OP_INVOKE", chunk, offset);
   case OpCode::INHERIT:
     return simpleInstruction("OP_INHERIT", offset);
+  case OpCode::GET_SUPER:
+    return constantInstruction("OP_GET_SUPER", chunk, offset);
+  case OpCode::SUPER_INVOKE:
+    return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
   default:
     std::cout << std::format("Unknown opcode {}\n", instruction);
     return offset + 1;

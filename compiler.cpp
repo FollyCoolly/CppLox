@@ -149,7 +149,7 @@ const ParseRule *Compiler::getRule(TokenType type) {
       {TokenType::OR, {Compiler::logicalOr, nullptr, Precedence::OR}},
       {TokenType::DOT, {nullptr, Compiler::dot, Precedence::CALL}},
       {TokenType::THIS, {Compiler::handleThis, nullptr, Precedence::NONE}},
-  };
+      {TokenType::SUPER, {nullptr, Compiler::handleSuper, Precedence::NONE}}};
   if (!rules.contains(type)) {
     throw std::runtime_error("No rule for token type: " +
                              std::to_string(static_cast<int>(type)));
@@ -163,6 +163,34 @@ void Compiler::handleThis(Compiler *compiler, bool can_assign) {
     return;
   }
   variable(compiler, false);
+}
+
+void Compiler::handleSuper(Compiler *compiler, bool can_assign) {
+  if (compiler->current_class_ == nullptr) {
+    compiler->parser_->error("Cannot use 'super' outside of a class.");
+    return;
+  } else if (!compiler->current_class_->has_superclass) {
+    compiler->parser_->error(
+        "Cannot use 'super' in a class with no superclass.");
+    return;
+  }
+
+  compiler->parser_->consume(TokenType::DOT, "Expect '.' after 'super'.");
+  compiler->parser_->consume(TokenType::IDENTIFIER,
+                             "Expect superclass method name.");
+  auto name_constant =
+      compiler->identifierConstant(compiler->parser_->previous());
+
+  namedVariable(compiler, Token::thisToken(), false);
+  if (compiler->parser_->match(TokenType::LEFT_PAREN)) {
+    auto arg_count = argumentList(compiler);
+    namedVariable(compiler, Token::superToken(), false);
+    compiler->emitBytes(OpCode::SUPER_INVOKE, name_constant);
+    compiler->emitByte(arg_count);
+  } else {
+    namedVariable(compiler, Token::superToken(), false);
+    compiler->emitBytes(OpCode::GET_SUPER, name_constant);
+  }
 }
 
 void Compiler::expression(Compiler *compiler) {
@@ -316,8 +344,13 @@ void Compiler::classDeclaration(Compiler *compiler) {
       compiler->parser_->error("A class can not inherit from itself.");
     }
 
+    beginScope(compiler);
+    compiler->addLocal(Token::superToken());
+    defineVariable(compiler, 0);
+
     namedVariable(compiler, class_name, false);
     compiler->emitByte(OpCode::INHERIT);
+    compiler->current_class_->has_superclass = true;
   }
 
   namedVariable(compiler, class_name, false);
@@ -334,6 +367,9 @@ void Compiler::classDeclaration(Compiler *compiler) {
                              "Expect '}' after class body.");
   compiler->emitByte(OpCode::POP);
 
+  if (compiler->current_class_->has_superclass) {
+    endScope(compiler);
+  }
   compiler->current_class_ = compiler->current_class_->enclosing;
 }
 

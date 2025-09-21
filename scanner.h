@@ -68,7 +68,14 @@ struct Token {
   }
 
   static Token emptyToken() { return Token{.start = "", .length = 0}; }
-  static Token thisToken() { return Token{.start = "this", .length = 4}; }
+  static Token thisToken() {
+    static const char *str = "this";
+    return Token{.start = str, .length = 4};
+  }
+  static Token superToken() {
+    static const char *str = "super";
+    return Token{.start = str, .length = 5};
+  }
 };
 
 class Scanner {

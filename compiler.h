@@ -60,6 +60,7 @@ struct CompileContext {
 
 struct ClassContext {
   ClassContext *enclosing;
+  bool has_superclass = false;
 };
 
 class Compiler {
@@ -125,6 +126,7 @@ public:
   static void namedVariable(Compiler *compiler, const Token &name,
                             bool can_assign);
   static void handleThis(Compiler *compiler, bool can_assign);
+  static void handleSuper(Compiler *compiler, bool can_assign);
   static void block(Compiler *compiler);
   static void logicalAnd(Compiler *compiler, bool can_assign);
   static void logicalOr(Compiler *compiler, bool can_assign);

@@ -303,6 +303,24 @@ InterpretResult VM::run() {
       pop();
       break;
     }
+    case OpCode::GET_SUPER: {
+      auto name = read_string();
+      auto super_class = obj_helpers::AsClass(pop());
+
+      if (!bindMethod(super_class, name)) {
+        return InterpretResult::InterpretRuntimeError;
+      }
+      break;
+    }
+    case OpCode::SUPER_INVOKE: {
+      auto method_name = read_string();
+      auto arg_count = read_byte();
+      auto super_class = obj_helpers::AsClass(pop());
+      if (!invokeFromClass(super_class, method_name, arg_count)) {
+        return InterpretResult::InterpretRuntimeError;
+      }
+      break;
+    }
     default: {
       runtimeError("Unknown opcode: " + std::to_string(instruction));
       return InterpretResult::InterpretRuntimeError;
